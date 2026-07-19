@@ -1,5 +1,6 @@
-import { useImperativeHandle, forwardRef, useMemo, useRef, useState, useEffect, type Ref } from 'react'
-import { View, Animated, DeviceEventEmitter, TouchableOpacity } from 'react-native'
+import { useImperativeHandle, forwardRef, useMemo, useRef, useState, type Ref } from 'react'
+import { View, Animated } from 'react-native'
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import { useWindowSize } from '@/utils/hooks'
 
 import Modal, { type ModalType } from './Modal'
@@ -11,12 +12,6 @@ import { scaleSizeH, scaleSizeW } from '@/utils/pixelRatio'
 
 const menuItemHeight = scaleSizeH(40)
 const menuItemWidth = scaleSizeW(100)
-
-// 遥控器按键码（与 MainActivity.java 中的 KeyEvent.KEYCODE_* 对应）
-const KEYCODE_DPAD_UP = 19
-const KEYCODE_DPAD_DOWN = 20
-const KEYCODE_DPAD_CENTER = 23
-const KEYCODE_ENTER = 66
 
 export interface Position { w: number, h: number, x: number, y: number, menuWidth?: number, menuHeight?: number }
 export interface MenuSize { width?: number, height?: number }
@@ -66,7 +61,6 @@ interface Props<M extends Menus = Menus> {
   fontSize?: number
   center?: boolean
   activeId?: M[number]['action'] | null
-  visible?: boolean
 }
 
 const Menu = ({
@@ -80,55 +74,11 @@ const Menu = ({
   activeId,
   fontSize = 15,
   center = false,
-  visible = false,
 }: Props) => {
   const theme = useTheme()
   const windowSize = useWindowSize()
-  // 当前高亮的菜单项索引（不依赖原生 onFocus，自行管理）
-  const [activeIndex, setActiveIndex] = useState(0)
-
-  // 每次 Menu 显示时（buttonPosition 变化），重置 activeIndex 到第一项
-  useEffect(() => {
-    setActiveIndex(0)
-  }, [buttonPosition])
-
-  // 监听原生转发的遥控器按键事件，自行管理菜单项高亮
-  // （因为 Menu 在 Modal/Dialog 中，原生层的 foreground 焦点高亮不生效）
-  useEffect(() => {
-    if (!visible) return
-    const subscription = DeviceEventEmitter.addListener('tvRemoteKey', (event) => {
-      if (!event) return
-      const keyCode = event.keyCode
-      // 获取当前可用的菜单项索引列表（跳过 disabled 项）
-      const enabledIndexes = menus
-        .map((m, i) => m.disabled ? -1 : i)
-        .filter(i => i >= 0)
-      if (enabledIndexes.length === 0) return
-
-      if (keyCode === KEYCODE_DPAD_UP) {
-        setActiveIndex(prev => {
-          const curPos = enabledIndexes.indexOf(prev)
-          const newPos = curPos <= 0 ? enabledIndexes.length - 1 : curPos - 1
-          return enabledIndexes[newPos]
-        })
-      } else if (keyCode === KEYCODE_DPAD_DOWN) {
-        setActiveIndex(prev => {
-          const curPos = enabledIndexes.indexOf(prev)
-          const newPos = curPos < 0 || curPos >= enabledIndexes.length - 1 ? 0 : curPos + 1
-          return enabledIndexes[newPos]
-        })
-      } else if (keyCode === KEYCODE_DPAD_CENTER || keyCode === KEYCODE_ENTER) {
-        // OK 键触发当前高亮项的点击
-        const currentMenu = menus[activeIndex]
-        if (currentMenu && !currentMenu.disabled) {
-          onPress(currentMenu)
-          onHide()
-        }
-      }
-    })
-    return () => subscription.remove()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [menus, activeIndex, onPress, onHide, visible])
+  // const fadeAnim = useRef(new Animated.Value(0)).current
+  // console.log(buttonPosition)
 
   const menuItemStyle = useMemo(() => {
     return {
@@ -178,16 +128,11 @@ const Menu = ({
   // console.log(menuStyle)
   // console.log(menuItemStyle)
   return (
-    <View
-      style={{ ...styles.menu, ...menuStyle, backgroundColor: theme['c-content-background'] }}
-      focusable={true}
-      hasTVPreferredFocus={true}
-    >
+    <View style={{ ...styles.menu, ...menuStyle, backgroundColor: theme['c-content-background'] }}>
       <Animated.ScrollView keyboardShouldPersistTaps={'always'}>
         {
-          menus.map((menu, index) => {
-            const isActive = index === activeIndex
-            return menu.disabled
+          menus.map((menu, index) => (
+            menu.disabled
               ? (
                   <View
                     key={menu.action}
@@ -199,20 +144,15 @@ const Menu = ({
               : (
                     <TouchableOpacity
                       key={menu.action}
-                      style={{
-                        ...styles.menuItem,
-                        width: menuItemStyle.width,
-                        height: menuItemStyle.height,
-                        backgroundColor: isActive ? theme['c-primary-background-active'] : 'transparent',
-                        borderLeftWidth: isActive ? 4 : 0,
-                        borderLeftColor: isActive ? theme['c-primary'] : 'transparent',
-                      }}
+                      style={{ ...styles.menuItem, width: menuItemStyle.width, height: menuItemStyle.height }}
+                      hasTVPreferredFocus={index === 0}
                       onPress={() => { menuPress(menu) }}
                     >
-                      <Text style={{ textAlign: center ? 'center' : 'left' }} color={menu.action == activeId ? theme['c-primary-font-active'] : (isActive ? theme['c-primary-font'] : undefined)} size={fontSize} numberOfLines={1}>{menu.label}</Text>
+                      <Text style={{ textAlign: center ? 'center' : 'left' }} color={menu.action == activeId ? theme['c-primary-font-active'] : undefined} size={fontSize} numberOfLines={1}>{menu.label}</Text>
                     </TouchableOpacity>
                   )
-          })
+
+          ))
         }
       </Animated.ScrollView>
     </View>
@@ -240,17 +180,14 @@ const Component = <M extends Menus>({ menus, width, height, activeId, onHide, on
   const modalRef = useRef<ModalType>(null)
   const [position, setPosition] = useState<Position>({ w: 0, h: 0, x: 0, y: 0 })
   const [menuSize, setMenuSize] = useState<MenuSize>({ })
-  const [visible, setVisible] = useState(false)
   const hide = () => {
     modalRef.current?.setVisible(false)
-    setVisible(false)
   }
   useImperativeHandle(ref, () => ({
     show(newPosition, menuSize) {
       setPosition(newPosition)
       if (menuSize) setMenuSize(menuSize)
       modalRef.current?.setVisible(true)
-      setVisible(true)
     },
     hide() {
       hide()
@@ -259,7 +196,7 @@ const Component = <M extends Menus>({ menus, width, height, activeId, onHide, on
 
   return (
     <Modal onHide={onHide} ref={modalRef}>
-      <Menu menus={menus} width={width} height={height} activeId={activeId} buttonPosition={position} menuSize={menuSize} onPress={onPress} onHide={hide} fontSize={fontSize} center={center} visible={visible} />
+      <Menu menus={menus} width={width} height={height} activeId={activeId} buttonPosition={position} menuSize={menuSize} onPress={onPress} onHide={hide} fontSize={fontSize} center={center} />
     </Modal>
   )
 }
