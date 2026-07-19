@@ -1,4 +1,4 @@
-name: Build TV Debug APK
+name: Build TV Release APK
 
 on:
   push:
@@ -30,9 +30,9 @@ jobs:
           cache: gradle
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install --legacy-peer-deps
 
-      - name: Setup keystore.properties for debug build
+      - name: Setup keystore.properties
         working-directory: android
         run: |
           cat > keystore.properties <<'EOF'
@@ -42,14 +42,14 @@ jobs:
           keyPassword=android
           EOF
 
-      - name: Build Debug APK
+      - name: Build Release APK
         working-directory: android
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         if: success()
         with:
-          name: lx-music-tv-debug-apk
-          path: android/app/build/outputs/apk/debug/*.apk
+          name: lx-music-tv-release-apk
+          path: android/app/build/outputs/apk/release/*.apk
           if-no-files-found: error
