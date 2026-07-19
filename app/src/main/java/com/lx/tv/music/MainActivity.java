@@ -113,6 +113,7 @@ public class MainActivity extends Activity implements UserApiCallback,
     private MusicPlayer musicPlayer;
     private MusicSearchManager searchManager;
     private RankApiManager rankApiManager;
+    private LyricApiManager lyricApiManager;
 
     // HTTP客户端（用于JS音源的HTTP请求）
     private HttpFetcher httpFetcher;
@@ -335,6 +336,8 @@ public class MainActivity extends Activity implements UserApiCallback,
         musicPlayer.setCallback(this);
         musicPlayer.setQuality(settingsPrefs.getString(KEY_QUALITY, "128k"));
         musicPlayer.setAutoPlayNext(settingsPrefs.getBoolean(KEY_AUTO_NEXT, true));
+        // 设置直接API音乐URL解析器，无需导入音源脚本即可播放
+        musicPlayer.setUrlApiManager(new MusicUrlApiManager(httpClient));
 
         searchManager = new MusicSearchManager(userApiEngine);
         searchManager.setSearchCallback(this);
@@ -342,12 +345,16 @@ public class MainActivity extends Activity implements UserApiCallback,
 
         // 排行榜API管理器
         rankApiManager = new RankApiManager(httpClient);
+        // 歌词直接API管理器
+        lyricApiManager = new LyricApiManager(httpClient);
 
         updatePlayModeDisplay();
     }
 
     /**
-     * 初始化默认音源脚本
+     * 初始化默认音源脚本（可选）
+     * 直接API模式下，无需导入音源脚本即可搜索、播放、显示歌词。
+     * 如果用户已导入JS脚本，作为备用加载。
      */
     private void initDefaultScript() {
         android.os.Bundle activeScript = scriptManager.getActiveScript();
@@ -355,8 +362,9 @@ public class MainActivity extends Activity implements UserApiCallback,
             Log.i(TAG, "Loading active script: " + activeScript.getString("name"));
             userApiEngine.loadScript(activeScript);
         } else {
-            showStatus("未导入音源脚本，请按菜单键进入设置导入");
-            Toast.makeText(this, "请按菜单键进入设置导入音源", Toast.LENGTH_LONG).show();
+            // 直接API模式：无需音源脚本，开箱即用
+            showStatus("就绪：直接API模式，可立即搜索播放");
+            Log.i(TAG, "No user script loaded, using direct API mode");
         }
     }
 
@@ -480,11 +488,7 @@ public class MainActivity extends Activity implements UserApiCallback,
             Toast.makeText(this, "请输入搜索关键词", Toast.LENGTH_SHORT).show();
             return;
         }
-        if (userApiEngine == null || !userApiEngine.isEngineReady()) {
-            Toast.makeText(this, "请先在设置-音源中导入音源脚本后再搜索", Toast.LENGTH_LONG).show();
-            showStatus("未导入音源脚本，无法搜索");
-            return;
-        }
+        // 直接API模式下，无需导入音源脚本即可搜索
         switchTab(0);
         showLoading(true);
         searchManager.search(keyword);
@@ -538,12 +542,7 @@ public class MainActivity extends Activity implements UserApiCallback,
     public void onItemClick(MusicInfo music, int position) {
         if (music == null) return;
         try {
-            // 检查音源引擎是否就绪，未导入音源时直接引导用户去设置
-            if (userApiEngine == null || !userApiEngine.isEngineReady()) {
-                Toast.makeText(this, "请先在设置-音源中导入音源脚本后再播放", Toast.LENGTH_LONG).show();
-                showStatus("未导入音源脚本，无法播放");
-                return;
-            }
+            // 直接API模式下，无需导入音源脚本即可播放
             // 添加到播放列表并播放
             if (!playlistManager.contains(music)) {
                 playlistManager.addToPlaylist(music);
@@ -954,19 +953,19 @@ public class MainActivity extends Activity implements UserApiCallback,
     // ============ 歌词显示 ============
 
     /**
-     * 请求歌词（通过音源脚本）
+     * 请求歌词（通过直接API，无需JS音源脚本）
      */
     private void requestLyric(MusicInfo music) {
         currentLyrics = null;
         currentLyricLine = -1;
         lyricContainer.removeAllViews();
-        if (music == null || searchManager == null) {
+        if (music == null || lyricApiManager == null) {
             hideLyricPanel();
             return;
         }
-        searchManager.getLyric(music, new MusicSearchManager.LyricRequestListener() {
+        lyricApiManager.getLyric(music, new LyricApiManager.LyricCallback() {
             @Override
-            public void onLyricSuccess(String lyricContent) {
+            public void onSuccess(String lyricContent) {
                 mainHandler.post(() -> {
                     if (TextUtils.isEmpty(lyricContent)) {
                         hideLyricPanel();
@@ -994,7 +993,7 @@ public class MainActivity extends Activity implements UserApiCallback,
             }
 
             @Override
-            public void onLyricError(String errorMessage) {
+            public void onError(String errorMessage) {
                 mainHandler.post(() -> hideLyricPanel());
             }
         });

@@ -49,6 +49,9 @@ public class MusicPlayer implements UserApiCallback {
     private final UserApiEngine userApiEngine;
     private final PlaylistManager playlistManager;
 
+    /** 直接API音乐URL解析器（不依赖JS引擎，避免QuickJS原生崩溃） */
+    private MusicUrlApiManager urlApiManager;
+
     private ExoPlayer exoPlayer;
     private MediaSession mediaSession;
     private PlayerCallback callback;
@@ -128,6 +131,14 @@ public class MusicPlayer implements UserApiCallback {
         this.callback = callback;
     }
 
+    /**
+     * 设置直接API音乐URL解析器
+     * 设置后将优先使用直接API获取播放URL，不再依赖JS音源脚本，避免QuickJS原生崩溃。
+     */
+    public void setUrlApiManager(MusicUrlApiManager urlApiManager) {
+        this.urlApiManager = urlApiManager;
+    }
+
     public void setQuality(String quality) {
         this.quality = quality;
     }
@@ -154,11 +165,6 @@ public class MusicPlayer implements UserApiCallback {
         }
         try {
             Log.i(TAG, "play: " + music.songName + " from " + music.getSourceDisplayName());
-            // 检查音源引擎是否就绪
-            if (userApiEngine == null || !userApiEngine.isEngineReady()) {
-                notifyError(music, "未导入音源脚本，请先进入设置-音源导入音源");
-                return;
-            }
             // 停止当前播放
             stopInternal();
             currentMusic = music;
@@ -170,7 +176,29 @@ public class MusicPlayer implements UserApiCallback {
             } catch (Exception ignored) {
                 notifyProgress(0, 0);
             }
-            // 请求播放URL
+            // 优先使用直接API获取播放URL（不依赖JS引擎，避免崩溃）
+            if (urlApiManager != null) {
+                requestMusicUrlDirect(music, quality, new UrlRequestListener() {
+                    @Override
+                    public void onUrlSuccess(String url) {
+                        Log.i(TAG, "Got music url (direct API): " + url);
+                        currentUrl = url;
+                        startPlayback(url);
+                    }
+
+                    @Override
+                    public void onUrlError(String errorMessage) {
+                        Log.e(TAG, "Failed to get music url: " + errorMessage);
+                        notifyError(currentMusic, "获取播放链接失败: " + errorMessage);
+                    }
+                });
+                return;
+            }
+            // 备用：通过UserApiEngine JS脚本获取（需要导入音源脚本）
+            if (userApiEngine == null || !userApiEngine.isEngineReady()) {
+                notifyError(music, "未导入音源脚本且未启用直接API，无法播放");
+                return;
+            }
             requestMusicUrl(music, quality, new UrlRequestListener() {
                 @Override
                 public void onUrlSuccess(String url) {
@@ -357,6 +385,32 @@ public class MusicPlayer implements UserApiCallback {
             currentRequestKey = null;
         }
         isRequestingUrl = false;
+    }
+
+    /**
+     * 通过直接API请求播放URL（不依赖JS引擎）
+     * 使用 MusicUrlApiManager 直接调用各音源公开API。
+     * OkHttp自带连接/读取超时，无需额外的Handler超时机制。
+     */
+    private void requestMusicUrlDirect(MusicInfo music, String quality, final UrlRequestListener listener) {
+        if (urlApiManager == null) {
+            listener.onUrlError("直接API解析器未初始化");
+            return;
+        }
+        isRequestingUrl = true;
+        urlApiManager.getUrl(music, quality, new MusicUrlApiManager.UrlCallback() {
+            @Override
+            public void onSuccess(String url) {
+                isRequestingUrl = false;
+                listener.onUrlSuccess(url);
+            }
+
+            @Override
+            public void onError(String errorMessage) {
+                isRequestingUrl = false;
+                listener.onUrlError(errorMessage);
+            }
+        });
     }
 
     /**
