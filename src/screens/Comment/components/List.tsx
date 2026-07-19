@@ -87,6 +87,7 @@ const List = forwardRef<ListType, ListProps>(({
       ref={flatListRef}
       style={styles.list}
       data={currentList}
+      focusable={true}
       onEndReachedThreshold={0.5}
       // maxToRenderPerBatch={4}
       // updateCellsBatchingPeriod={80}

@@ -4,6 +4,8 @@ import android.app.Application;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -35,6 +37,10 @@ public class MainActivity extends NavigationActivity {
     private int focusSelectorResId = 0;
     /** 标记 View 已应用焦点选择器的 tag ID */
     private int focusAppliedTagId = 0;
+    /** 标记当前焦点 View 的 tag ID（用于追踪当前聚焦元素） */
+    private int focusedTagId = 0;
+    /** 主线程 Handler，用于延迟检查焦点 */
+    private Handler mainHandler;
 
     /** 视图树全局焦点变化监听器，确保动态新增的 View 也能被适配 */
     private ViewTreeObserver.OnGlobalFocusChangeListener focusListener;
@@ -50,10 +56,14 @@ public class MainActivity extends NavigationActivity {
                 "tv_focus_selector", "drawable", getPackageName());
         focusAppliedTagId = getResources().getIdentifier(
                 "tv_focus_applied", "id", getPackageName());
+        focusedTagId = getResources().getIdentifier(
+                "tv_focused_view", "id", getPackageName());
 
-        // 开启默认焦点高亮（系统级兜底）
+        mainHandler = new Handler(Looper.getMainLooper());
+
+        // 关闭系统默认焦点高亮，避免与我们自定义的 foreground 选择器重叠
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            getWindow().getDecorView().setDefaultFocusHighlightEnabled(true);
+            getWindow().getDecorView().setDefaultFocusHighlightEnabled(false);
         }
 
         final View rootView = getWindow().getDecorView().findViewById(android.R.id.content);
@@ -126,15 +136,15 @@ public class MainActivity extends NavigationActivity {
 
     /**
      * 给单个 View 设置焦点前景选择器
-     * 对所有可点击的 View 强制设置可聚焦，并应用焦点高亮前景
+     * 对所有可点击或已可聚焦的 View 应用焦点高亮前景
      */
     private void applyFocusSelectorToView(View view) {
         if (view == null || focusSelectorResId == 0) return;
         // 用 id tag 标记已设置过，避免与 RN 内部使用的 tag 冲突
         if (focusAppliedTagId != 0 && view.getTag(focusAppliedTagId) != null) return;
 
-        // 只要是可点击的 View（有交互能力），就强制设为可聚焦
-        if (view.isClickable()) {
+        // 可点击的 View（有交互能力）或已经可聚焦的 View（如 FlatList/ScrollView）
+        if (view.isClickable() || view.isFocusable()) {
             try {
                 if (!view.isFocusable()) {
                     view.setFocusable(true);
@@ -171,8 +181,58 @@ public class MainActivity extends NavigationActivity {
                 return true;
             }
         }
+
+        // D-pad / OK / Enter 键：延迟检查当前焦点（覆盖 Modal/Dialog 中的 View）
+        if (isDpadOrOkKey(keyCode)) {
+            mainHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    applyFocusToCurrentFocusView();
+                }
+            }, 50);
+        }
+
         // 其他按键走默认处理（D-pad 焦点导航由 RN 自动处理）
         return super.onKeyDown(keyCode, event);
+    }
+
+    /**
+     * 判断是否是 D-pad 或 OK/Enter 键
+     */
+    private boolean isDpadOrOkKey(int keyCode) {
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_DPAD_UP:
+            case KeyEvent.KEYCODE_DPAD_DOWN:
+            case KeyEvent.KEYCODE_DPAD_LEFT:
+            case KeyEvent.KEYCODE_DPAD_RIGHT:
+            case KeyEvent.KEYCODE_DPAD_CENTER:
+            case KeyEvent.KEYCODE_ENTER:
+            case KeyEvent.KEYCODE_NUMPAD_ENTER:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * 给当前获得焦点的 View 应用焦点高亮前景
+     * 使用 getCurrentFocus() 可以获取到 Dialog/Modal 中的焦点 View
+     */
+    private void applyFocusToCurrentFocusView() {
+        try {
+            View currentFocus = getCurrentFocus();
+            if (currentFocus != null) {
+                applyFocusSelectorToView(currentFocus);
+                // 同时遍历当前焦点 View 的父级容器中的所有可点击 View
+                // （确保 Dialog/Modal 内新增的可交互元素也被标记）
+                View parent = (View) currentFocus.getParent();
+                if (parent != null && parent instanceof ViewGroup) {
+                    applyFocusSelectorToTree(parent);
+                }
+            }
+        } catch (Throwable t) {
+            // ignore
+        }
     }
 
     /**
