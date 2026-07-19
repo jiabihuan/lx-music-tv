@@ -1,10 +1,19 @@
-import { playNext, setMusicUrl } from '@/core/player/player'
+import { DeviceEventEmitter } from 'react-native'
+import { playNext, playPrev, togglePlay, setMusicUrl } from '@/core/player/player'
 import { setStatusText } from '@/core/player/playStatus'
 import { getPosition, isEmpty, setStop } from '@/plugins/player'
 import { isActive } from '@/utils/tools'
 import BackgroundTimer from 'react-native-background-timer'
 import playerState from '@/store/player/state'
 import { setNowPlayTime } from '@/core/player/progress'
+
+// Android KeyEvent 媒体键码（与 MainActivity.java 中拦截的按键对应）
+const KEYCODE_MEDIA_PLAY = 126
+const KEYCODE_MEDIA_PAUSE = 127
+const KEYCODE_MEDIA_PLAY_PAUSE = 85
+const KEYCODE_MEDIA_NEXT = 87
+const KEYCODE_MEDIA_PREVIOUS = 88
+const KEYCODE_MEDIA_STOP = 86
 
 
 export default () => {
@@ -135,4 +144,27 @@ export default () => {
   global.app_event.on('playerEmptied', handleEmpied)
   global.app_event.on('playerError', handleError)
   global.app_event.on('musicToggled', handleSetPlayInfo)
+
+  // TV 遥控器媒体键监听
+  // 原生侧（MainActivity.java）拦截媒体键后通过 RCTDeviceEventEmitter 发送 "tvRemoteKey" 事件
+  // JS 侧用 DeviceEventEmitter 监听，映射到播放控制函数
+  DeviceEventEmitter.addListener('tvRemoteKey', (event) => {
+    if (!event) return
+    switch (event.keyCode) {
+      case KEYCODE_MEDIA_PLAY:
+      case KEYCODE_MEDIA_PLAY_PAUSE:
+      case KEYCODE_MEDIA_PAUSE:
+        togglePlay()
+        break
+      case KEYCODE_MEDIA_NEXT:
+        void playNext()
+        break
+      case KEYCODE_MEDIA_PREVIOUS:
+        void playPrev()
+        break
+      case KEYCODE_MEDIA_STOP:
+        void togglePlay()
+        break
+    }
+  })
 }
