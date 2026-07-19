@@ -1,4 +1,4 @@
-import { initSetting, showPactModal } from '@/core/common'
+import { initSetting, updateSetting } from '@/core/common'
 import registerPlaybackService from '@/plugins/player/service'
 import initTheme from './theme'
 import initI18n from './i18n'
@@ -18,15 +18,14 @@ import { cheatTip } from '@/utils/tools'
 let isFirstPush = true
 const handlePushedHomeScreen = async() => {
   await cheatTip()
-  if (settingState.setting['common.isAgreePact']) {
-    if (isFirstPush) {
-      isFirstPush = false
-      void checkUpdate()
-      void initDeeplink()
-    }
-  } else {
-    if (isFirstPush) isFirstPush = false
-    showPactModal()
+  // TV 版默认同意协议，不弹许可弹窗（电视遥控器操作不便）
+  if (!settingState.setting['common.isAgreePact']) {
+    updateSetting({ 'common.isAgreePact': true })
+  }
+  if (isFirstPush) {
+    isFirstPush = false
+    void checkUpdate()
+    void initDeeplink()
   }
 }
 
