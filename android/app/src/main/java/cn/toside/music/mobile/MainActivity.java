@@ -1,7 +1,13 @@
 package cn.toside.music.mobile;
 
 import android.app.Application;
+import android.graphics.drawable.Drawable;
+import android.os.Build;
+import android.os.Bundle;
 import android.view.KeyEvent;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 
 import com.facebook.react.ReactApplication;
 import com.facebook.react.ReactInstanceManager;
@@ -15,19 +21,136 @@ import com.reactnativenavigation.NavigationActivity;
 /**
  * LX Music TV 版主 Activity
  *
- * 在原版 react-native-navigation 的 NavigationActivity 基础上添加遥控器按键处理：
- *  - D-pad 上下左右：React Native 默认已支持焦点导航，这里只做兜底
- *  - 媒体键（播放/暂停/上一首/下一首）：转发到 JS 侧统一处理
- *  - 菜单键(KEYCODE_MENU)：弹出 React Native DevServer 菜单（开发用）
- *  - 返回键：交给 RN 处理（JS 内可拦截）
- *
- * 所有媒体按键事件通过 RCTDeviceEventEmitter 发送到 JS 侧，
- * JS 侧通过 NativeEventEmitter 监听 "tvRemoteKey" 事件。
+ * 在原版 react-native-navigation 的 NavigationActivity 基础上添加：
+ *  - 遥控器按键处理（媒体键转发到 JS）
+ *  - TV 焦点高亮：给所有可聚焦 View 设置 foreground 焦点选择器，
+ *    确保遥控器焦点在电视屏幕上清晰可见
  */
 public class MainActivity extends NavigationActivity {
 
     /** TV 遥控器按键事件名（JS 侧通过 NativeEventEmitter 监听） */
     private static final String TV_REMOTE_EVENT = "tvRemoteKey";
+
+    /** 焦点选择器资源 ID（在 onCreate 中解析） */
+    private int focusSelectorResId = 0;
+    /** 标记 View 已应用焦点选择器的 tag ID */
+    private int focusAppliedTagId = 0;
+
+    /** 视图树全局焦点变化监听器，确保动态新增的 View 也能被适配 */
+    private ViewTreeObserver.OnGlobalFocusChangeListener focusListener;
+    /** 全局布局变化监听器，确保每次新页面/新弹窗出现时都能重新应用焦点高亮 */
+    private ViewTreeObserver.OnGlobalLayoutListener layoutListener;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        // 获取焦点选择器资源 ID
+        focusSelectorResId = getResources().getIdentifier(
+                "tv_focus_selector", "drawable", getPackageName());
+        focusAppliedTagId = getResources().getIdentifier(
+                "tv_focus_applied", "id", getPackageName());
+
+        // 开启默认焦点高亮（系统级兜底）
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            getWindow().getDecorView().setDefaultFocusHighlightEnabled(true);
+        }
+
+        final View rootView = getWindow().getDecorView().findViewById(android.R.id.content);
+
+        // 注册全局焦点变化监听
+        focusListener = new ViewTreeObserver.OnGlobalFocusChangeListener() {
+            @Override
+            public void onGlobalFocusChanged(View oldFocus, View newFocus) {
+                // 每次焦点变化都全量遍历一次（处理新增 View）
+                applyFocusSelectorToTree(rootView);
+            }
+        };
+        rootView.getViewTreeObserver().addOnGlobalFocusChangeListener(focusListener);
+
+        // 注册全局布局监听（新页面、弹窗出现时会触发）
+        layoutListener = new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                applyFocusSelectorToTree(rootView);
+            }
+        };
+        rootView.getViewTreeObserver().addOnGlobalLayoutListener(layoutListener);
+
+        // 初始延迟遍历一次，等 RN 把视图挂上去
+        rootView.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                applyFocusSelectorToTree(rootView);
+            }
+        }, 1000);
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (focusListener != null || layoutListener != null) {
+            View rootView = getWindow().getDecorView().findViewById(android.R.id.content);
+            if (rootView != null) {
+                ViewTreeObserver vto = rootView.getViewTreeObserver();
+                if (focusListener != null) {
+                    vto.removeOnGlobalFocusChangeListener(focusListener);
+                    focusListener = null;
+                }
+                if (layoutListener != null) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                        vto.removeOnGlobalLayoutListener(layoutListener);
+                    } else {
+                        vto.removeGlobalOnLayoutListener(layoutListener);
+                    }
+                    layoutListener = null;
+                }
+            }
+        }
+        super.onDestroy();
+    }
+
+    /**
+     * 遍历视图树，给所有可聚焦的 View 设置焦点前景选择器
+     */
+    private void applyFocusSelectorToTree(View view) {
+        if (view == null) return;
+        applyFocusSelectorToView(view);
+        if (view instanceof ViewGroup) {
+            ViewGroup vg = (ViewGroup) view;
+            int count = vg.getChildCount();
+            for (int i = 0; i < count; i++) {
+                applyFocusSelectorToTree(vg.getChildAt(i));
+            }
+        }
+    }
+
+    /**
+     * 给单个 View 设置焦点前景选择器
+     * 对所有可点击的 View 强制设置可聚焦，并应用焦点高亮前景
+     */
+    private void applyFocusSelectorToView(View view) {
+        if (view == null || focusSelectorResId == 0) return;
+        // 用 id tag 标记已设置过，避免与 RN 内部使用的 tag 冲突
+        if (focusAppliedTagId != 0 && view.getTag(focusAppliedTagId) != null) return;
+
+        // 只要是可点击的 View（有交互能力），就强制设为可聚焦
+        if (view.isClickable()) {
+            try {
+                if (!view.isFocusable()) {
+                    view.setFocusable(true);
+                    view.setFocusableInTouchMode(false);
+                }
+                Drawable selector = getResources().getDrawable(focusSelectorResId);
+                if (selector != null) {
+                    view.setForeground(selector);
+                    if (focusAppliedTagId != 0) view.setTag(focusAppliedTagId, true);
+                    view.setClipToOutline(false);
+                }
+            } catch (Throwable t) {
+                // 忽略，不影响正常运行
+            }
+        }
+    }
 
     /**
      * 拦截遥控器按键事件，转发到 JS 侧统一处理。
