@@ -16,6 +16,7 @@ import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -69,13 +70,14 @@ public class MainActivity extends Activity implements UserApiCallback,
 
     // UI 组件
     private EditText etSearch;
-    private TextView tabSearch, tabRank, tabMine;
+    private TextView tabSearch, tabRank, tabMine, tabSettings;
     private TextView[] tabs;
     private RecyclerView recyclerView;
     private MusicAdapter musicAdapter;
     private ProgressBar progressBar;
     private TextView tvEmpty;
     private TextView tvStatus;
+    private ImageView ivSettings;
 
     // 播放控制栏
     private View playerBar;
@@ -104,7 +106,7 @@ public class MainActivity extends Activity implements UserApiCallback,
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     // 状态
-    private int currentTab = 0; // 0=搜索, 1=排行, 2=我的
+    private int currentTab = 0; // 0=搜索, 1=排行, 2=我的, 3=音源
     private boolean isUserSeeking = false;
     private SharedPreferences settingsPrefs;
     // 设备类型：true 表示 TV 模式（大字体+焦点导航为主），false 表示手机模式（触屏点击为主，同时保留焦点导航以支持蓝牙遥控器）
@@ -140,7 +142,9 @@ public class MainActivity extends Activity implements UserApiCallback,
         tabSearch = findViewById(R.id.tab_search);
         tabRank = findViewById(R.id.tab_rank);
         tabMine = findViewById(R.id.tab_mine);
-        tabs = new TextView[]{tabSearch, tabRank, tabMine};
+        tabSettings = findViewById(R.id.tab_settings);
+        tabs = new TextView[]{tabSearch, tabRank, tabMine, tabSettings};
+        ivSettings = findViewById(R.id.iv_settings);
 
         recyclerView = findViewById(R.id.recycler_view);
         progressBar = findViewById(R.id.progress_bar);
@@ -174,6 +178,10 @@ public class MainActivity extends Activity implements UserApiCallback,
         tabSearch.setOnClickListener(v -> switchTab(0));
         tabRank.setOnClickListener(v -> switchTab(1));
         tabMine.setOnClickListener(v -> switchTab(2));
+        tabSettings.setOnClickListener(v -> switchTab(3));
+
+        // 设置按钮点击
+        ivSettings.setOnClickListener(v -> openSettings());
 
         // 搜索框：回车触发搜索
         etSearch.setOnEditorActionListener(new TextView.OnEditorActionListener() {
@@ -323,6 +331,9 @@ public class MainActivity extends Activity implements UserApiCallback,
                 break;
             case 2: // 我的（播放列表）
                 showMyPlaylist();
+                break;
+            case 3: // 音源设置
+                openSettings();
                 break;
         }
     }
@@ -736,7 +747,7 @@ public class MainActivity extends Activity implements UserApiCallback,
     }
 
     private boolean isTabView(View v) {
-        return v == tabSearch || v == tabRank || v == tabMine;
+        return v == tabSearch || v == tabRank || v == tabMine || v == tabSettings;
     }
 
     @Override
