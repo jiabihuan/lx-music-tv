@@ -359,6 +359,17 @@ public class PlaylistManager {
         return false;
     }
 
+    /**
+     * 查找歌曲在播放列表中的位置
+     */
+    public int indexOf(MusicInfo music) {
+        if (music == null) return -1;
+        for (int i = 0; i < playlist.size(); i++) {
+            if (music.equals(playlist.get(i))) return i;
+        }
+        return -1;
+    }
+
     // ====== 持久化 ======
 
     private void saveToStorage() {
