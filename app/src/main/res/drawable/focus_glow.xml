@@ -1,59 +1,60 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 焦点高亮背景：发光阴影效果，默认透明，聚焦时显示金色光晕，按下时加深 -->
+<!-- 精致发光焦点样式：layer-list 模拟外/中/内三层金色光晕，圆角统一 8dp -->
+<!-- 默认完全透明，不影响 UI -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- 聚焦状态：发光阴影效果 -->
+    <!-- 聚焦状态：发光效果 -->
     <item android:state_focused="true">
         <layer-list>
-            <!-- 外层光晕：模拟发光的阴影 -->
+            <!-- 最外层：6dp 宽的非常淡的金色 stroke，模拟外发光 -->
             <item>
                 <shape android:shape="rectangle">
                     <solid android:color="#00FFC107" />
-                    <stroke android:width="8dp" android:color="#33FFC107" />
-                    <corners android:radius="12dp" />
-                    <padding android:left="4dp" android:top="4dp" android:right="4dp" android:bottom="4dp" />
+                    <stroke android:width="6dp" android:color="#22FFC107" />
+                    <corners android:radius="8dp" />
+                    <padding android:left="3dp" android:top="3dp" android:right="3dp" android:bottom="3dp" />
                 </shape>
             </item>
-            <!-- 中层光晕 -->
+            <!-- 中层：3dp 宽的中等金色 stroke，模拟中发光 -->
             <item>
                 <shape android:shape="rectangle">
                     <solid android:color="#00FFC107" />
-                    <stroke android:width="4dp" android:color="#66FFC107" />
-                    <corners android:radius="10dp" />
-                    <padding android:left="2dp" android:top="2dp" android:right="2dp" android:bottom="2dp" />
+                    <stroke android:width="3dp" android:color="#44FFC107" />
+                    <corners android:radius="8dp" />
+                    <padding android:left="1.5dp" android:top="1.5dp" android:right="1.5dp" android:bottom="1.5dp" />
                 </shape>
             </item>
-            <!-- 内层：背景+细边框 -->
+            <!-- 内层：1.5dp 亮金色 stroke + 半透明白色背景，清晰边界 -->
             <item>
                 <shape android:shape="rectangle">
-                    <solid android:color="#1AFFFFFF" />
+                    <solid android:color="#15FFFFFF" />
                     <stroke android:width="1.5dp" android:color="#FFFFC107" />
                     <corners android:radius="8dp" />
                 </shape>
             </item>
         </layer-list>
     </item>
-    <!-- 按下状态：发光更强，背景稍深 -->
+    <!-- 按下状态：发光更强（颜色加深） -->
     <item android:state_pressed="true">
         <layer-list>
-            <!-- 外层光晕 -->
+            <!-- 最外层 -->
             <item>
                 <shape android:shape="rectangle">
                     <solid android:color="#00FFC107" />
-                    <stroke android:width="8dp" android:color="#55FFC107" />
-                    <corners android:radius="12dp" />
-                    <padding android:left="4dp" android:top="4dp" android:right="4dp" android:bottom="4dp" />
+                    <stroke android:width="6dp" android:color="#44FFC107" />
+                    <corners android:radius="8dp" />
+                    <padding android:left="3dp" android:top="3dp" android:right="3dp" android:bottom="3dp" />
                 </shape>
             </item>
-            <!-- 中层光晕 -->
+            <!-- 中层 -->
             <item>
                 <shape android:shape="rectangle">
                     <solid android:color="#00FFC107" />
-                    <stroke android:width="4dp" android:color="#88FFC107" />
-                    <corners android:radius="10dp" />
-                    <padding android:left="2dp" android:top="2dp" android:right="2dp" android:bottom="2dp" />
+                    <stroke android:width="3dp" android:color="#88FFC107" />
+                    <corners android:radius="8dp" />
+                    <padding android:left="1.5dp" android:top="1.5dp" android:right="1.5dp" android:bottom="1.5dp" />
                 </shape>
             </item>
-            <!-- 内层：背景+细边框 -->
+            <!-- 内层：背景稍深 -->
             <item>
                 <shape android:shape="rectangle">
                     <solid android:color="#33FFFFFF" />
@@ -69,14 +70,14 @@
             <item>
                 <shape android:shape="rectangle">
                     <solid android:color="#00FFC107" />
-                    <stroke android:width="4dp" android:color="#44FFC107" />
-                    <corners android:radius="10dp" />
-                    <padding android:left="2dp" android:top="2dp" android:right="2dp" android:bottom="2dp" />
+                    <stroke android:width="3dp" android:color="#33FFC107" />
+                    <corners android:radius="8dp" />
+                    <padding android:left="1.5dp" android:top="1.5dp" android:right="1.5dp" android:bottom="1.5dp" />
                 </shape>
             </item>
             <item>
                 <shape android:shape="rectangle">
-                    <solid android:color="#15FFFFFF" />
+                    <solid android:color="#10FFFFFF" />
                     <stroke android:width="1dp" android:color="#AAFFC107" />
                     <corners android:radius="8dp" />
                 </shape>

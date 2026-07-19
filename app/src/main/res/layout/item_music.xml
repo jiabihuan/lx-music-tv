@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 歌曲列表项布局：序号 + 歌曲名/歌手/专辑 + 音源标签 + 时长 -->
-<!-- 支持遥控器焦点高亮 -->
+<!-- 支持遥控器焦点高亮，尺寸通过 @dimen 引用适配 TV/手机 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -10,9 +10,9 @@
     android:focusable="true"
     android:focusableInTouchMode="true"
     android:clickable="true"
-    android:padding="12dp"
-    android:layout_marginStart="16dp"
-    android:layout_marginEnd="16dp"
+    android:padding="@dimen/item_padding"
+    android:layout_marginStart="@dimen/item_padding"
+    android:layout_marginEnd="@dimen/item_padding"
     android:layout_marginTop="4dp"
     android:layout_marginBottom="4dp"
     android:minHeight="56dp">
@@ -22,7 +22,7 @@
         android:id="@+id/playing_indicator"
         android:layout_width="6dp"
         android:layout_height="24dp"
-        android:layout_marginEnd="12dp"
+        android:layout_marginEnd="@dimen/item_padding"
         android:background="#FFC107"
         android:visibility="invisible" />
 
@@ -33,7 +33,7 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:textColor="#AAFFFFFF"
-        android:textSize="16sp"
+        android:textSize="@dimen/song_singer_size"
         android:text="1" />
 
     <!-- 歌曲信息容器 -->
@@ -42,15 +42,15 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:orientation="vertical"
-        android:layout_marginStart="12dp"
-        android:layout_marginEnd="12dp">
+        android:layout_marginStart="@dimen/item_padding"
+        android:layout_marginEnd="@dimen/item_padding">
 
         <TextView
             android:id="@+id/tv_song_name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textColor="#FFFFFF"
-            android:textSize="20sp"
+            android:textSize="@dimen/song_title_size"
             android:textStyle="bold"
             android:singleLine="true"
             android:ellipsize="end"
@@ -69,7 +69,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:textColor="#99FFFFFF"
-                android:textSize="14sp"
+                android:textSize="@dimen/song_singer_size"
                 android:singleLine="true"
                 android:ellipsize="end"
                 android:text="歌手" />
@@ -78,9 +78,9 @@
                 android:id="@+id/tv_album"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
+                android:layout_marginStart="@dimen/item_padding"
                 android:textColor="#88FFFFFF"
-                android:textSize="13sp"
+                android:textSize="@dimen/song_singer_size"
                 android:singleLine="true"
                 android:ellipsize="end"
                 android:maxWidth="160dp"
@@ -98,10 +98,10 @@
         android:paddingTop="4dp"
         android:paddingBottom="4dp"
         android:textColor="#FFFFFF"
-        android:textSize="13sp"
+        android:textSize="@dimen/song_singer_size"
         android:textStyle="bold"
         android:background="#FF6B35"
-        android:layout_marginEnd="12dp"
+        android:layout_marginEnd="@dimen/item_padding"
         android:text="酷我" />
 
     <!-- 时长 -->
@@ -110,7 +110,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textColor="#AAFFFFFF"
-        android:textSize="14sp"
+        android:textSize="@dimen/song_singer_size"
         android:minWidth="56dp"
         android:gravity="end"
         android:text="03:55" />

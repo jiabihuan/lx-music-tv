@@ -2,8 +2,10 @@ package com.lx.tv.music;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.UiModeManager;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -93,6 +95,7 @@ public class MainActivity extends Activity implements UserApiCallback,
     private PlaylistManager playlistManager;
     private MusicPlayer musicPlayer;
     private MusicSearchManager searchManager;
+    private RankApiManager rankApiManager;
 
     // HTTP客户端（用于JS音源的HTTP请求）
     private HttpFetcher httpFetcher;
@@ -104,6 +107,8 @@ public class MainActivity extends Activity implements UserApiCallback,
     private int currentTab = 0; // 0=搜索, 1=排行, 2=我的
     private boolean isUserSeeking = false;
     private SharedPreferences settingsPrefs;
+    // 设备类型：true 表示 TV 模式（大字体+焦点导航为主），false 表示手机模式（触屏点击为主，同时保留焦点导航以支持蓝牙遥控器）
+    private boolean isTvMode = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -111,10 +116,23 @@ public class MainActivity extends Activity implements UserApiCallback,
         setContentView(R.layout.activity_main);
 
         settingsPrefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        // 检测当前设备类型（TV / 手机 / 平板）
+        isTvMode = isTvMode();
 
         initViews();
         initBusiness();
         initDefaultScript();
+    }
+
+    /**
+     * 检测当前是否运行在 TV 模式
+     * 通过 UiModeManager 判断设备类型，UI_MODE_TYPE_TELEVISION 表示 TV 设备
+     * 手机/平板/模拟器返回 false
+     */
+    private boolean isTvMode() {
+        UiModeManager uiModeManager = (UiModeManager) getSystemService(UI_MODE_SERVICE);
+        return uiModeManager != null
+                && uiModeManager.getCurrentModeType() == Configuration.UI_MODE_TYPE_TELEVISION;
     }
 
     private void initViews() {
@@ -213,8 +231,36 @@ public class MainActivity extends Activity implements UserApiCallback,
         btnNext.setFocusable(true);
         btnPlayPause.setFocusable(true);
 
+        // 按设备类型调整交互行为（尺寸已通过 dimens.xml 自动适配 sw360dp/sw600dp）
+        applyDeviceModeAdjustments();
+
         updateTabHighlight();
         showEmpty("请输入关键词搜索音乐");
+    }
+
+    /**
+     * 按当前设备类型调整交互行为
+     * - TV 模式：保持焦点导航为主，启动时主动聚焦到第一个 Tab，方便遥控器直接操作
+     * - 手机模式：触屏点击为主，避免启动时弹出软键盘；同时保留焦点能力以支持蓝牙遥控器/方向键
+     * 注意：所有 clickable + focusable 属性已在 XML 中声明，触屏点击与焦点导航可共存
+     */
+    private void applyDeviceModeAdjustments() {
+        if (isTvMode) {
+            // TV：聚焦到首个 Tab，方便遥控器直接切换
+            if (tabSearch != null) {
+                tabSearch.requestFocus();
+            }
+            // TV 模式不主动聚焦 EditText，避免弹出输入法
+        } else {
+            // 手机：RecyclerView 默认已支持触屏滑动与点击；
+            // 不主动给 EditText 焦点，避免启动时直接弹出软键盘；
+            // 触屏点击列表项由 MusicAdapter.OnItemClickListener 处理
+            // 焦点导航仍可用（蓝牙遥控器/方向键），因为所有交互控件都设置了 focusable=true
+            if (recyclerView != null) {
+                // 触屏模式下增加点击反馈
+                recyclerView.setSoundEffectsEnabled(true);
+            }
+        }
     }
 
     private void initBusiness() {
@@ -241,6 +287,9 @@ public class MainActivity extends Activity implements UserApiCallback,
 
         searchManager = new MusicSearchManager(userApiEngine);
         searchManager.setSearchCallback(this);
+
+        // 排行榜API管理器
+        rankApiManager = new RankApiManager(httpClient);
 
         updatePlayModeDisplay();
     }
@@ -302,8 +351,60 @@ public class MainActivity extends Activity implements UserApiCallback,
     }
 
     private void showRankList() {
-        // 简化版：显示提示
-        showEmpty("排行榜功能开发中...");
+        // 弹出排行榜选择对话框
+        List<RankApiManager.RankInfo> ranks = RankApiManager.getAvailableRanks();
+        String[] rankNames = new String[ranks.size()];
+        for (int i = 0; i < ranks.size(); i++) {
+            rankNames[i] = ranks.get(i).name;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle("选择排行榜")
+                .setItems(rankNames, (dialog, which) -> {
+                    RankApiManager.RankInfo rank = ranks.get(which);
+                    loadRankList(rank);
+                })
+                .setNegativeButton("取消", null)
+                .show();
+    }
+
+    private void loadRankList(RankApiManager.RankInfo rank) {
+        showLoading(true);
+        showStatus("正在加载" + rank.name + "...");
+        rankApiManager.loadRank(rank, new RankApiManager.RankCallback() {
+            @Override
+            public void onRankLoadStart(String rankName) {
+                mainHandler.post(() -> {
+                    showLoading(true);
+                    showStatus("正在加载" + rankName + "...");
+                });
+            }
+
+            @Override
+            public void onRankLoadSuccess(List<MusicInfo> songs, String rankName) {
+                mainHandler.post(() -> {
+                    showLoading(false);
+                    if (songs != null && !songs.isEmpty()) {
+                        musicAdapter.setData(songs);
+                        hideEmpty();
+                        showStatus(rankName + " 共 " + songs.size() + " 首");
+                        if (recyclerView.getChildCount() > 0) {
+                            recyclerView.getChildAt(0).requestFocus();
+                        }
+                    } else {
+                        showEmpty(rankName + " 暂无数据");
+                    }
+                });
+            }
+
+            @Override
+            public void onRankLoadError(String errorMessage) {
+                mainHandler.post(() -> {
+                    showLoading(false);
+                    showEmpty("加载失败: " + errorMessage);
+                    showStatus("排行榜加载失败: " + errorMessage);
+                });
+            }
+        });
     }
 
     private void showMyPlaylist() {

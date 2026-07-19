@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 焦点放大动画：获得焦点时放大 1.05 倍 -->
+<set xmlns:android="http://schemas.android.com/apk/res/android">
+    <scale android:fromXScale="1.0" android:toXScale="1.05"
+           android:fromYScale="1.0" android:toYScale="1.05"
+           android:duration="150" android:pivotX="50%" android:pivotY="50%"
+           android:fillAfter="true" />
+</set>

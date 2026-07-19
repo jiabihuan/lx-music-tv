@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 主界面布局：顶部搜索栏+Tab + 中间歌曲列表 + 底部播放控制栏 -->
+<!-- 同时适配 TV（遥控器）和手机（触屏）：尺寸通过 @dimen 引用，按 sw360dp/sw600dp 自动切换 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -12,18 +13,18 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp"
+        android:padding="@dimen/item_padding"
         android:background="#FF212121">
 
         <!-- 搜索框 -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="@dimen/search_bar_height"
             android:orientation="horizontal"
             android:gravity="center_vertical"
             android:background="#FF303030"
-            android:padding="8dp"
-            android:layout_marginBottom="12dp">
+            android:padding="@dimen/item_padding"
+            android:layout_marginBottom="@dimen/item_padding">
 
             <ImageView
                 android:layout_width="24dp"
@@ -42,11 +43,11 @@
                 android:hint="输入歌曲名、歌手名搜索..."
                 android:textColor="#FFFFFF"
                 android:textColorHint="#88FFFFFF"
-                android:textSize="18sp"
+                android:textSize="@dimen/tab_text_size"
                 android:inputType="text"
                 android:imeOptions="actionSearch"
                 android:singleLine="true"
-                android:padding="8dp"
+                android:padding="@dimen/item_padding"
                 android:focusable="true"
                 android:focusableInTouchMode="true" />
         </LinearLayout>
@@ -66,9 +67,9 @@
                 android:gravity="center"
                 android:text="搜索"
                 android:textColor="#FFFFC107"
-                android:textSize="18sp"
+                android:textSize="@dimen/tab_text_size"
                 android:textStyle="bold"
-                android:padding="12dp"
+                android:padding="@dimen/tab_padding"
                 android:background="@drawable/focus_background"
                 android:focusable="true"
                 android:focusableInTouchMode="true"
@@ -82,8 +83,8 @@
                 android:gravity="center"
                 android:text="排行"
                 android:textColor="#CCFFFFFF"
-                android:textSize="18sp"
-                android:padding="12dp"
+                android:textSize="@dimen/tab_text_size"
+                android:padding="@dimen/tab_padding"
                 android:focusable="true"
                 android:focusableInTouchMode="true"
                 android:clickable="true" />
@@ -96,8 +97,8 @@
                 android:gravity="center"
                 android:text="我的"
                 android:textColor="#CCFFFFFF"
-                android:textSize="18sp"
-                android:padding="12dp"
+                android:textSize="@dimen/tab_text_size"
+                android:padding="@dimen/tab_padding"
                 android:focusable="true"
                 android:focusableInTouchMode="true"
                 android:clickable="true" />
@@ -114,7 +115,7 @@
             android:id="@+id/recycler_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:padding="8dp"
+            android:padding="@dimen/item_padding"
             android:clipToPadding="false"
             android:scrollbars="vertical" />
 
@@ -125,7 +126,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:textColor="#99FFFFFF"
-            android:textSize="18sp"
+            android:textSize="@dimen/song_title_size"
             android:gravity="center"
             android:text="请输入关键词搜索音乐"
             android:visibility="visible" />
@@ -144,9 +145,9 @@
         android:id="@+id/tv_status"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="8dp"
+        android:padding="@dimen/item_padding"
         android:textColor="#AAFFFFFF"
-        android:textSize="13sp"
+        android:textSize="@dimen/song_singer_size"
         android:gravity="center"
         android:visibility="gone"
         android:background="#FF212121" />

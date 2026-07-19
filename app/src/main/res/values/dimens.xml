@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 默认尺寸（中等，适配大多数手机） -->
+<resources>
+    <dimen name="search_bar_height">48dp</dimen>
+    <dimen name="tab_text_size">16sp</dimen>
+    <dimen name="song_title_size">16sp</dimen>
+    <dimen name="song_singer_size">13sp</dimen>
+    <dimen name="player_bar_height">64dp</dimen>
+    <dimen name="item_padding">10dp</dimen>
+    <dimen name="tab_padding">12dp</dimen>
+    <dimen name="player_btn_size">40dp</dimen>
+</resources>

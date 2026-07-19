@@ -28,7 +28,7 @@
                 android:text="返回"
                 android:textSize="16sp"
                 android:padding="12dp"
-                android:background="@drawable/focus_background"
+                android:background="@drawable/focus_glow"
                 android:focusable="true"
                 android:focusableInTouchMode="true" />
 
@@ -95,7 +95,7 @@
                 android:text="从文件导入"
                 android:textSize="16sp"
                 android:padding="12dp"
-                android:background="@drawable/focus_background"
+                android:background="@drawable/focus_glow"
                 android:focusable="true"
                 android:focusableInTouchMode="true"
                 android:layout_marginEnd="8dp" />
@@ -108,7 +108,86 @@
                 android:text="从URL导入"
                 android:textSize="16sp"
                 android:padding="12dp"
-                android:background="@drawable/focus_background"
+                android:background="@drawable/focus_glow"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:layout_marginStart="8dp" />
+        </LinearLayout>
+
+        <!-- 手动添加音源按钮 -->
+        <Button
+            android:id="@+id/btn_add_manual"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="手动添加音源（粘贴JS代码）"
+            android:textSize="16sp"
+            android:padding="12dp"
+            android:background="@drawable/focus_glow"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:layout_marginBottom="16dp" />
+
+        <!-- 订阅管理 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="音源订阅"
+            android:textColor="#FFFFC107"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:id="@+id/tv_subscriptions_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="已添加订阅 (0)"
+            android:textColor="#CCFFFFFF"
+            android:textSize="14sp"
+            android:layout_marginBottom="8dp" />
+
+        <!-- 订阅列表 -->
+        <ListView
+            android:id="@+id/lv_subscriptions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="80dp"
+            android:background="#FF212121"
+            android:padding="8dp"
+            android:divider="#33FFFFFF"
+            android:dividerHeight="1dp" />
+
+        <!-- 订阅操作按钮 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="24dp">
+
+            <Button
+                android:id="@+id/btn_add_subscription"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="添加订阅"
+                android:textSize="16sp"
+                android:padding="12dp"
+                android:background="@drawable/focus_glow"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:layout_marginEnd="8dp" />
+
+            <Button
+                android:id="@+id/btn_refresh_subscriptions"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="刷新所有订阅"
+                android:textSize="16sp"
+                android:padding="12dp"
+                android:background="@drawable/focus_glow"
                 android:focusable="true"
                 android:focusableInTouchMode="true"
                 android:layout_marginStart="8dp" />
@@ -146,7 +225,7 @@
                 android:textSize="16sp"
                 android:padding="12dp"
                 android:buttonTint="#FFC107"
-                android:background="@drawable/focus_background"
+                android:background="@drawable/focus_glow"
                 android:focusable="true"
                 android:focusableInTouchMode="true" />
 
@@ -159,7 +238,7 @@
                 android:textSize="16sp"
                 android:padding="12dp"
                 android:buttonTint="#FFC107"
-                android:background="@drawable/focus_background"
+                android:background="@drawable/focus_glow"
                 android:focusable="true"
                 android:focusableInTouchMode="true" />
 
@@ -172,7 +251,7 @@
                 android:textSize="16sp"
                 android:padding="12dp"
                 android:buttonTint="#FFC107"
-                android:background="@drawable/focus_background"
+                android:background="@drawable/focus_glow"
                 android:focusable="true"
                 android:focusableInTouchMode="true" />
         </RadioGroup>
@@ -199,7 +278,7 @@
             android:orientation="horizontal"
             android:gravity="center_vertical"
             android:padding="12dp"
-            android:background="@drawable/focus_background"
+            android:background="@drawable/focus_glow"
             android:focusable="true"
             android:focusableInTouchMode="true"
             android:layout_marginBottom="24dp">
@@ -252,7 +331,7 @@
                 android:textSize="16sp"
                 android:padding="12dp"
                 android:buttonTint="#FFC107"
-                android:background="@drawable/focus_background"
+                android:background="@drawable/focus_glow"
                 android:focusable="true"
                 android:focusableInTouchMode="true" />
 
@@ -265,7 +344,7 @@
                 android:textSize="16sp"
                 android:padding="12dp"
                 android:buttonTint="#FFC107"
-                android:background="@drawable/focus_background"
+                android:background="@drawable/focus_glow"
                 android:focusable="true"
                 android:focusableInTouchMode="true" />
 
@@ -278,7 +357,7 @@
                 android:textSize="16sp"
                 android:padding="12dp"
                 android:buttonTint="#FFC107"
-                android:background="@drawable/focus_background"
+                android:background="@drawable/focus_glow"
                 android:focusable="true"
                 android:focusableInTouchMode="true" />
 
@@ -291,7 +370,7 @@
                 android:textSize="16sp"
                 android:padding="12dp"
                 android:buttonTint="#FFC107"
-                android:background="@drawable/focus_background"
+                android:background="@drawable/focus_glow"
                 android:focusable="true"
                 android:focusableInTouchMode="true" />
         </RadioGroup>

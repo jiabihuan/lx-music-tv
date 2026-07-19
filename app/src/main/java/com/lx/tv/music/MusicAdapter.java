@@ -209,6 +209,9 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.MusicViewHol
                 tvSongName.setTextColor(Color.parseColor("#FFFFFF"));
             }
 
+            // 应用发光焦点样式（替代原方框样式）
+            itemView.setBackgroundResource(R.drawable.focus_glow);
+
             // 点击事件
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -220,16 +223,17 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.MusicViewHol
                 }
             });
 
-            // 焦点变化监听（用于高亮）
+            // 焦点变化监听（发光样式 + 缩放动画）
             itemView.setOnFocusChangeListener(new View.OnFocusChangeListener() {
                 @Override
                 public void onFocusChange(View v, boolean hasFocus) {
                     if (hasFocus) {
                         selectedPosition = position;
-                        // 焦点放大效果
-                        v.animate().scaleX(1.03f).scaleY(1.03f).setDuration(120).start();
+                        // 焦点放大效果（配合发光样式）
+                        v.animate().scaleX(1.05f).scaleY(1.05f).setDuration(150).start();
+                        v.bringToFront();
                     } else {
-                        v.animate().scaleX(1.0f).scaleY(1.0f).setDuration(120).start();
+                        v.animate().scaleX(1.0f).scaleY(1.0f).setDuration(100).start();
                     }
                 }
             });

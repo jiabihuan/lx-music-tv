@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 底部播放控制栏：歌曲信息 + 进度条 + 控制按钮 -->
+<!-- 尺寸通过 @dimen 引用，按 sw360dp/sw600dp 自动适配 TV/手机 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:background="@drawable/player_bar_bg"
-    android:padding="16dp">
+    android:padding="@dimen/item_padding">
 
     <!-- 第一行：歌曲名 + 歌手 + 播放模式 -->
     <LinearLayout
@@ -25,7 +26,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textColor="#FFFFFF"
-                android:textSize="20sp"
+                android:textSize="@dimen/song_title_size"
                 android:textStyle="bold"
                 android:singleLine="true"
                 android:ellipsize="end"
@@ -37,7 +38,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
                 android:textColor="#99FFFFFF"
-                android:textSize="14sp"
+                android:textSize="@dimen/song_singer_size"
                 android:singleLine="true"
                 android:ellipsize="end"
                 android:text="" />
@@ -48,9 +49,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="#FFC107"
-            android:textSize="14sp"
+            android:textSize="@dimen/song_singer_size"
             android:padding="6dp"
-            android:layout_marginStart="12dp"
+            android:layout_marginStart="@dimen/item_padding"
             android:text="顺序播放" />
     </LinearLayout>
 
@@ -67,7 +68,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="#CCFFFFFF"
-            android:textSize="14sp"
+            android:textSize="@dimen/song_singer_size"
             android:minWidth="56dp"
             android:text="00:00" />
 
@@ -88,7 +89,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="#CCFFFFFF"
-            android:textSize="14sp"
+            android:textSize="@dimen/song_singer_size"
             android:minWidth="56dp"
             android:gravity="end"
             android:text="00:00" />
@@ -104,8 +105,8 @@
 
         <ImageButton
             android:id="@+id/btn_prev"
-            android:layout_width="56dp"
-            android:layout_height="56dp"
+            android:layout_width="@dimen/player_btn_size"
+            android:layout_height="@dimen/player_btn_size"
             android:background="@drawable/focus_background"
             android:focusable="true"
             android:focusableInTouchMode="true"
@@ -116,8 +117,8 @@
 
         <ImageButton
             android:id="@+id/btn_play_pause"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
+            android:layout_width="@dimen/player_btn_size"
+            android:layout_height="@dimen/player_btn_size"
             android:background="@drawable/focus_background"
             android:focusable="true"
             android:focusableInTouchMode="true"
@@ -127,8 +128,8 @@
 
         <ImageButton
             android:id="@+id/btn_next"
-            android:layout_width="56dp"
-            android:layout_height="56dp"
+            android:layout_width="@dimen/player_btn_size"
+            android:layout_height="@dimen/player_btn_size"
             android:background="@drawable/focus_background"
             android:focusable="true"
             android:focusableInTouchMode="true"
