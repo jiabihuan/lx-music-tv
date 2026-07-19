@@ -73,11 +73,20 @@ public class UserApiEngine {
     JavaScriptThread javaScriptThread = this.javaScriptThread;
     if (javaScriptThread == null) return false;
     Handler jsHandler = javaScriptThread.getHandler();
+    if (jsHandler == null) return false;
     Message message = jsHandler.obtainMessage();
     message.what = HandlerWhat.ACTION;
     message.obj = new Object[]{action, info};
     jsHandler.sendMessage(message);
     return true;
+  }
+
+  /**
+   * 判断引擎是否已加载脚本并就绪。
+   * 用于 UI 层在请求播放URL前判断是否可发送请求，避免静默丢弃。
+   */
+  public boolean isEngineReady() {
+    return this.javaScriptThread != null && this.javaScriptThread.getHandler() != null;
   }
 
   /**

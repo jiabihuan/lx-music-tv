@@ -115,6 +115,30 @@ public class MainActivity extends Activity implements UserApiCallback,
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // 注册全局未捕获异常处理器，记录崩溃日志到文件，避免直接闪退无任何提示
+        final Thread.UncaughtExceptionHandler defaultHandler = Thread.getDefaultUncaughtExceptionHandler();
+        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(Thread t, Throwable e) {
+                Log.e(TAG, "Uncaught exception in " + t.getName(), e);
+                try {
+                    java.io.File logFile = new java.io.File(getFilesDir(), "crash_log.txt");
+                    java.io.FileWriter fw = new java.io.FileWriter(logFile, true);
+                    java.io.PrintWriter pw = new java.io.PrintWriter(fw);
+                    pw.println("==== " + new java.util.Date() + " ====");
+                    pw.println("Thread: " + t.getName());
+                    e.printStackTrace(pw);
+                    pw.println();
+                    pw.flush();
+                    pw.close();
+                } catch (Exception ignored) {
+                }
+                if (defaultHandler != null) {
+                    defaultHandler.uncaughtException(t, e);
+                }
+            }
+        });
+
         setContentView(R.layout.activity_main);
 
         settingsPrefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
@@ -436,6 +460,11 @@ public class MainActivity extends Activity implements UserApiCallback,
             Toast.makeText(this, "请输入搜索关键词", Toast.LENGTH_SHORT).show();
             return;
         }
+        if (userApiEngine == null || !userApiEngine.isEngineReady()) {
+            Toast.makeText(this, "请先在设置-音源中导入音源脚本后再搜索", Toast.LENGTH_LONG).show();
+            showStatus("未导入音源脚本，无法搜索");
+            return;
+        }
         switchTab(0);
         showLoading(true);
         searchManager.search(keyword);
@@ -487,18 +516,30 @@ public class MainActivity extends Activity implements UserApiCallback,
 
     @Override
     public void onItemClick(MusicInfo music, int position) {
-        // 添加到播放列表并播放
-        if (!playlistManager.contains(music)) {
-            playlistManager.addToPlaylist(music);
+        if (music == null) return;
+        try {
+            // 检查音源引擎是否就绪，未导入音源时直接引导用户去设置
+            if (userApiEngine == null || !userApiEngine.isEngineReady()) {
+                Toast.makeText(this, "请先在设置-音源中导入音源脚本后再播放", Toast.LENGTH_LONG).show();
+                showStatus("未导入音源脚本，无法播放");
+                return;
+            }
+            // 添加到播放列表并播放
+            if (!playlistManager.contains(music)) {
+                playlistManager.addToPlaylist(music);
+            }
+            // 设置当前播放索引
+            int idx = playlistManager.indexOf(music);
+            if (idx >= 0) {
+                playlistManager.setCurrentIndex(idx);
+            }
+            musicPlayer.play(music);
+            musicAdapter.setPlayingMusic(music);
+            Toast.makeText(this, "正在播放: " + music.songName, Toast.LENGTH_SHORT).show();
+        } catch (Throwable t) {
+            Log.e(TAG, "onItemClick crashed: " + t.getMessage());
+            Toast.makeText(this, "播放失败: " + t.getMessage(), Toast.LENGTH_LONG).show();
         }
-        // 设置当前播放索引
-        int idx = playlistManager.indexOf(music);
-        if (idx >= 0) {
-            playlistManager.setCurrentIndex(idx);
-        }
-        musicPlayer.play(music);
-        musicAdapter.setPlayingMusic(music);
-        Toast.makeText(this, "正在播放: " + music.songName, Toast.LENGTH_SHORT).show();
     }
 
     // ============ PlayerCallback 实现 ============

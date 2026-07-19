@@ -148,29 +148,43 @@ public class MusicPlayer implements UserApiCallback {
             notifyError(null, "music is null");
             return;
         }
-        Log.i(TAG, "play: " + music.songName + " from " + music.getSourceDisplayName());
-        // 停止当前播放
-        stopInternal();
-        currentMusic = music;
-        isPaused = false;
-        isPlaying = false;
-        notifyStatus("加载中...");
-        notifyProgress(0, music.getIntervalSeconds());
-        // 请求播放URL
-        requestMusicUrl(music, quality, new UrlRequestListener() {
-            @Override
-            public void onUrlSuccess(String url) {
-                Log.i(TAG, "Got music url: " + url);
-                currentUrl = url;
-                startPlayback(url);
+        try {
+            Log.i(TAG, "play: " + music.songName + " from " + music.getSourceDisplayName());
+            // 检查音源引擎是否就绪
+            if (userApiEngine == null || !userApiEngine.isEngineReady()) {
+                notifyError(music, "未导入音源脚本，请先进入设置-音源导入音源");
+                return;
             }
+            // 停止当前播放
+            stopInternal();
+            currentMusic = music;
+            isPaused = false;
+            isPlaying = false;
+            notifyStatus("加载中...");
+            try {
+                notifyProgress(0, music.getIntervalSeconds());
+            } catch (Exception ignored) {
+                notifyProgress(0, 0);
+            }
+            // 请求播放URL
+            requestMusicUrl(music, quality, new UrlRequestListener() {
+                @Override
+                public void onUrlSuccess(String url) {
+                    Log.i(TAG, "Got music url: " + url);
+                    currentUrl = url;
+                    startPlayback(url);
+                }
 
-            @Override
-            public void onUrlError(String errorMessage) {
-                Log.e(TAG, "Failed to get music url: " + errorMessage);
-                notifyError(currentMusic, "获取播放链接失败: " + errorMessage);
-            }
-        });
+                @Override
+                public void onUrlError(String errorMessage) {
+                    Log.e(TAG, "Failed to get music url: " + errorMessage);
+                    notifyError(currentMusic, "获取播放链接失败: " + errorMessage);
+                }
+            });
+        } catch (Throwable t) {
+            Log.e(TAG, "play crashed: " + t.getMessage());
+            notifyError(music, "播放失败: " + t.getMessage());
+        }
     }
 
     /**
@@ -361,6 +375,10 @@ public class MusicPlayer implements UserApiCallback {
             listener.onUrlError("UserApiEngine未初始化");
             return;
         }
+        if (!userApiEngine.isEngineReady()) {
+            listener.onUrlError("音源引擎未就绪，请先导入音源脚本");
+            return;
+        }
         final String requestKey = "req_" + System.currentTimeMillis() + "_" + random.nextInt(10000);
         currentRequestKey = requestKey;
         isRequestingUrl = true;
@@ -371,17 +389,24 @@ public class MusicPlayer implements UserApiCallback {
             requestData.put("requestKey", requestKey);
 
             JSONObject data = new JSONObject();
-            data.put("source", music.source);
+            data.put("source", music.source != null ? music.source : "");
             data.put("action", "musicUrl");
 
             JSONObject info = new JSONObject();
-            info.put("type", quality);
+            info.put("type", quality != null ? quality : "128k");
             info.put("musicInfo", music.toJson());
             data.put("info", info);
 
             requestData.put("data", data);
 
-            userApiEngine.sendAction("request", requestData.toString());
+            boolean sent = userApiEngine.sendAction("request", requestData.toString());
+            if (!sent) {
+                urlRequestMap.remove(requestKey);
+                isRequestingUrl = false;
+                currentRequestKey = null;
+                listener.onUrlError("音源引擎未就绪，请先导入音源");
+                return;
+            }
 
             // 超时处理
             Message timeoutMsg = mainHandler.obtainMessage(MSG_URL_TIMEOUT, requestKey);
@@ -390,6 +415,12 @@ public class MusicPlayer implements UserApiCallback {
         } catch (JSONException e) {
             Log.e(TAG, "requestMusicUrl JSON error: " + e.getMessage());
             listener.onUrlError("请求构造失败: " + e.getMessage());
+            urlRequestMap.remove(requestKey);
+            isRequestingUrl = false;
+            currentRequestKey = null;
+        } catch (Throwable t) {
+            Log.e(TAG, "requestMusicUrl crashed: " + t.getMessage());
+            listener.onUrlError("请求异常: " + t.getMessage());
             urlRequestMap.remove(requestKey);
             isRequestingUrl = false;
             currentRequestKey = null;
@@ -416,19 +447,33 @@ public class MusicPlayer implements UserApiCallback {
             return;
         }
         try {
-            if (mediaPlayer == null) {
-                mediaPlayer = new MediaPlayer();
-                mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-                    AudioAttributes attrs = new AudioAttributes.Builder()
-                            .setUsage(AudioAttributes.USAGE_MEDIA)
-                            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                            .build();
-                    mediaPlayer.setAudioAttributes(attrs);
+            // 销毁旧实例并重建，避免reset后再设置监听器遗漏的问题
+            if (mediaPlayer != null) {
+                try {
+                    if (mediaPlayer.isPlaying()) mediaPlayer.stop();
+                } catch (Exception ignored) {
                 }
-                mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-                    @Override
-                    public void onPrepared(MediaPlayer mp) {
+                try {
+                    mediaPlayer.reset();
+                    mediaPlayer.release();
+                } catch (Exception ignored) {
+                }
+                mediaPlayer = null;
+            }
+            mediaPlayer = new MediaPlayer();
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                AudioAttributes attrs = new AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                        .build();
+                mediaPlayer.setAudioAttributes(attrs);
+            } else {
+                mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+            }
+            mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+                @Override
+                public void onPrepared(MediaPlayer mp) {
+                    try {
                         isPreparing = false;
                         isPlaying = true;
                         isPaused = false;
@@ -439,11 +484,16 @@ public class MusicPlayer implements UserApiCallback {
                             callback.onPlayStart(currentMusic);
                         }
                         Log.i(TAG, "Playback started");
+                    } catch (Throwable t) {
+                        Log.e(TAG, "onPrepared crashed: " + t.getMessage());
+                        notifyError(currentMusic, "播放启动失败: " + t.getMessage());
                     }
-                });
-                mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                    @Override
-                    public void onCompletion(MediaPlayer mp) {
+                }
+            });
+            mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                @Override
+                public void onCompletion(MediaPlayer mp) {
+                    try {
                         Log.i(TAG, "Playback completed");
                         isPlaying = false;
                         stopProgressUpdate();
@@ -453,36 +503,45 @@ public class MusicPlayer implements UserApiCallback {
                         if (autoPlayNext) {
                             next();
                         }
+                    } catch (Throwable t) {
+                        Log.e(TAG, "onCompletion crashed: " + t.getMessage());
                     }
-                });
-                mediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
-                    @Override
-                    public boolean onError(MediaPlayer mp, int what, int extra) {
-                        Log.e(TAG, "MediaPlayer error: what=" + what + " extra=" + extra);
-                        isPlaying = false;
-                        isPreparing = false;
-                        stopProgressUpdate();
-                        String errMsg = "播放错误(" + what + "," + extra + ")";
-                        notifyError(currentMusic, errMsg);
-                        return true;
-                    }
-                });
-                mediaPlayer.setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
-                    @Override
-                    public void onBufferingUpdate(MediaPlayer mp, int percent) {
-                        // 可扩展：通知缓冲进度
-                    }
-                });
-            } else {
-                mediaPlayer.reset();
-            }
+                }
+            });
+            mediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+                @Override
+                public boolean onError(MediaPlayer mp, int what, int extra) {
+                    Log.e(TAG, "MediaPlayer error: what=" + what + " extra=" + extra);
+                    isPlaying = false;
+                    isPreparing = false;
+                    stopProgressUpdate();
+                    String errMsg = "播放错误(" + what + "," + extra + ")";
+                    notifyError(currentMusic, errMsg);
+                    return true;
+                }
+            });
+            mediaPlayer.setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
+                @Override
+                public void onBufferingUpdate(MediaPlayer mp, int percent) {
+                    // 可扩展：通知缓冲进度
+                }
+            });
             isPreparing = true;
             notifyStatus("缓冲中...");
             mediaPlayer.setDataSource(url);
             mediaPlayer.prepareAsync();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             Log.e(TAG, "startPlayback failed: " + e.getMessage());
             isPreparing = false;
+            // 释放可能处于异常状态的MediaPlayer
+            if (mediaPlayer != null) {
+                try {
+                    mediaPlayer.reset();
+                    mediaPlayer.release();
+                } catch (Exception ignored) {
+                }
+                mediaPlayer = null;
+            }
             notifyError(currentMusic, "播放失败: " + e.getMessage());
         }
     }
