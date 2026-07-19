@@ -182,14 +182,19 @@ public class MainActivity extends NavigationActivity {
             }
         }
 
-        // D-pad / OK / Enter 键：延迟检查当前焦点（覆盖 Modal/Dialog 中的 View）
+        // D-pad / OK / Enter 键：多次延迟检查当前焦点（覆盖 Modal/Dialog 中的 View）
         if (isDpadOrOkKey(keyCode)) {
-            mainHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    applyFocusToCurrentFocusView();
-                }
-            }, 50);
+            // 多次检查，确保 Dialog/Modal 中的 View 也能被捕获
+            // （Dialog 有独立 Window，Activity 的视图树遍历不到）
+            long[] delays = { 30, 80, 150, 300 };
+            for (long delay : delays) {
+                mainHandler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        applyFocusToCurrentFocusView();
+                    }
+                }, delay);
+            }
         }
 
         // 其他按键走默认处理（D-pad 焦点导航由 RN 自动处理）
@@ -217,17 +222,22 @@ public class MainActivity extends NavigationActivity {
     /**
      * 给当前获得焦点的 View 应用焦点高亮前景
      * 使用 getCurrentFocus() 可以获取到 Dialog/Modal 中的焦点 View
+     * 向上遍历找到 Dialog 的根视图后全量遍历，确保弹窗内所有
+     * 可交互元素都被标记
      */
     private void applyFocusToCurrentFocusView() {
         try {
             View currentFocus = getCurrentFocus();
             if (currentFocus != null) {
                 applyFocusSelectorToView(currentFocus);
-                // 同时遍历当前焦点 View 的父级容器中的所有可点击 View
-                // （确保 Dialog/Modal 内新增的可交互元素也被标记）
-                View parent = (View) currentFocus.getParent();
-                if (parent != null && parent instanceof ViewGroup) {
-                    applyFocusSelectorToTree(parent);
+                // 向上找到最顶层的 ViewGroup（可能是 Dialog 的根视图）
+                View root = currentFocus;
+                while (root.getParent() != null && root.getParent() instanceof View) {
+                    root = (View) root.getParent();
+                }
+                // 全量遍历 Dialog/Modal 的视图树
+                if (root != null && root != currentFocus) {
+                    applyFocusSelectorToTree(root);
                 }
             }
         } catch (Throwable t) {

@@ -111,7 +111,7 @@ export default forwardRef<InputType, InputProps>(({ onChangeText, onClearText, c
   }, [onChangeText])
 
   return (
-    <View style={styles.content}>
+    <TouchableOpacity style={styles.content} onPress={() => { inputRef.current?.focus() }}>
       <TextInput
         autoCapitalize="none"
         onChangeText={changeText}
@@ -132,7 +132,7 @@ export default forwardRef<InputType, InputProps>(({ onChangeText, onClearText, c
         }
       {/* </Animated.View>
       </View> */}
-    </View>
+    </TouchableOpacity>
   )
 })
 
