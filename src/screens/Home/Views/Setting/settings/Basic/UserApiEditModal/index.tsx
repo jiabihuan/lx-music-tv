@@ -2,13 +2,15 @@ import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/F
 import { useRef, useImperativeHandle, forwardRef, useState } from 'react'
 import Text from '@/components/common/Text'
 import {View} from 'react-native'
-import { createStyle, openUrl } from '@/utils/tools'
+import { createStyle, openUrl, tipDialog } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
 import Dialog, { type DialogType } from '@/components/common/Dialog'
 import Button from '@/components/common/Button'
 import List from './List'
-import ImportBtn from './ImportBtn'
+import ScriptImportExport, { type ScriptImportExportType } from './ScriptImportExport'
+import ScriptImportOnline, { type ScriptImportOnlineType } from './ScriptImportOnline'
+import { state } from '@/store/userApi'
 
 // interface UrlInputType {
 //   setText: (text: string) => void
@@ -63,6 +65,8 @@ export interface UserApiEditModalType {
 
 export default forwardRef<UserApiEditModalType, {}>((props, ref) => {
   const dialogRef = useRef<DialogType>(null)
+  const scriptImportExportRef = useRef<ScriptImportExportType>(null)
+  const scriptImportOnlineRef = useRef<ScriptImportOnlineType>(null)
   // const sourceSelectorRef = useRef<SourceSelectorType>(null)
   // const inputRef = useRef<UrlInputType>(null)
   const [visible, setVisible] = useState(false)
@@ -99,6 +103,28 @@ export default forwardRef<UserApiEditModalType, {}>((props, ref) => {
     void openUrl('https://lyswhut.github.io/lx-music-doc/mobile/custom-source')
   }
 
+  const handleImportLocal = () => {
+    if (state.list.length > 20) {
+      void tipDialog({
+        message: t('user_api_max_tip'),
+        btnText: t('ok'),
+      })
+      return
+    }
+    scriptImportExportRef.current?.import()
+  }
+
+  const handleImportOnline = () => {
+    if (state.list.length > 20) {
+      void tipDialog({
+        message: t('user_api_max_tip'),
+        btnText: t('ok'),
+      })
+      return
+    }
+    scriptImportOnlineRef.current?.show()
+  }
+
   return (
     visible
       ? (
@@ -120,11 +146,15 @@ export default forwardRef<UserApiEditModalType, {}>((props, ref) => {
               </View>
             </View>
             <View style={styles.btns}>
-              <Button style={{ ...styles.btn, backgroundColor: theme['c-button-background'] }} onPress={handleCancel}>
-                <Text size={14} color={theme['c-button-font']}>{t('close')}</Text>
+              <Button style={{ ...styles.btn, backgroundColor: theme['c-button-background'] }} onPress={handleImportLocal}>
+                <Text size={14} color={theme['c-button-font']}>{t('user_api_btn_import_local')}</Text>
               </Button>
-              <ImportBtn btnStyle={{ ...styles.btn, backgroundColor: theme['c-button-background'] }} />
+              <Button style={{ ...styles.btn, backgroundColor: theme['c-button-background'] }} onPress={handleImportOnline}>
+                <Text size={14} color={theme['c-button-font']}>{t('user_api_btn_import_online')}</Text>
+              </Button>
             </View>
+            <ScriptImportExport ref={scriptImportExportRef} />
+            <ScriptImportOnline ref={scriptImportOnlineRef} />
           </Dialog>
         ) : null
   )

@@ -4,16 +4,18 @@ import { View } from 'react-native'
 
 import SubTitle from '../../components/SubTitle'
 import CheckBox from '@/components/common/CheckBox'
-import { createStyle } from '@/utils/tools'
+import { createStyle, tipDialog } from '@/utils/tools'
 import { setApiSource } from '@/core/apiSource'
 import { useI18n } from '@/lang'
 import apiSourceInfo from '@/utils/musicSdk/api-source-info'
 import { useSettingValue } from '@/store/setting/hook'
 import { useStatus, useUserApiList } from '@/store/userApi'
-import Button from '../../components/Button'
-import UserApiEditModal, { type UserApiEditModalType } from './UserApiEditModal'
+import Button from '@/components/common/Button'
+import ScriptImportExport, { type ScriptImportExportType } from './UserApiEditModal/ScriptImportExport'
+import ScriptImportOnline, { type ScriptImportOnlineType } from './UserApiEditModal/ScriptImportOnline'
 import Text from '@/components/common/Text'
 import { useTheme } from '@/store/theme/hook'
+import { state } from '@/store/userApi'
 // import { importUserApi, removeUserApi } from '@/core/userApi'
 
 const apiSourceList = apiSourceInfo.map(api => ({
@@ -90,9 +92,29 @@ export default memo(() => {
     })
   }, [userApiListRaw, apiStatus, apiSourceSetting, t])
 
-  const modalRef = useRef<UserApiEditModalType>(null)
-  const handleShow = () => {
-    modalRef.current?.show()
+  const scriptImportExportRef = useRef<ScriptImportExportType>(null)
+  const scriptImportOnlineRef = useRef<ScriptImportOnlineType>(null)
+
+  const handleImportLocal = () => {
+    if (state.list.length > 20) {
+      void tipDialog({
+        message: t('user_api_max_tip'),
+        btnText: t('ok'),
+      })
+      return
+    }
+    scriptImportExportRef.current?.import()
+  }
+
+  const handleImportOnline = () => {
+    if (state.list.length > 20) {
+      void tipDialog({
+        message: t('user_api_max_tip'),
+        btnText: t('ok'),
+      })
+      return
+    }
+    scriptImportOnlineRef.current?.show()
   }
 
   return (
@@ -105,10 +127,16 @@ export default memo(() => {
           userApiList.map(({ id, name, desc, statusLabel }) => <Item name={name} desc={desc} statusLabel={statusLabel} id={id} key={id} change={setApiSourceId} />)
         }
       </View>
-      <View style={styles.btn}>
-        <Button onPress={handleShow}>{t('setting_basic_source_user_api_btn')}</Button>
+      <View style={styles.importBtns}>
+        <Button style={{ ...styles.importBtn, backgroundColor: theme['c-button-background'] }} onPress={handleImportLocal}>
+          <Text size={14} color={theme['c-button-font']}>{t('user_api_btn_import_local')}</Text>
+        </Button>
+        <Button style={{ ...styles.importBtn, backgroundColor: theme['c-button-background'], marginRight: 0 }} onPress={handleImportOnline}>
+          <Text size={14} color={theme['c-button-font']}>{t('user_api_btn_import_online')}</Text>
+        </Button>
       </View>
-      <UserApiEditModal ref={modalRef} />
+      <ScriptImportExport ref={scriptImportExportRef} />
+      <ScriptImportOnline ref={scriptImportOnlineRef} />
     </SubTitle>
   )
 })
@@ -120,9 +148,17 @@ const styles = createStyle({
     // flexDirection: 'row',
     // flexWrap: 'wrap',
   },
-  btn: {
+  importBtns: {
     marginTop: 10,
     flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  importBtn: {
+    flex: 1,
+    padding: 10,
+    alignItems: 'center',
+    borderRadius: 4,
+    marginRight: 10,
   },
   sourceLabel: {
 
