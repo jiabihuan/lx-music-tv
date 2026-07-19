@@ -57,6 +57,7 @@ const Item = ({ id, name, desc, statusLabel, change }: {
 
 export default memo(() => {
   const t = useI18n()
+  const theme = useTheme()
   const list = useMemo(() => apiSourceList.map(s => ({
     // @ts-expect-error
     name: t(`setting_basic_source_${s.id}`) || s.name,
