@@ -1,4 +1,5 @@
-import { TouchableOpacity, View } from 'react-native'
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
+import {View} from 'react-native'
 import { Icon } from '@/components/common/Icon'
 import { useTheme } from '@/store/theme/hook'
 // import { useIsPlay } from '@/store/player/hook'
@@ -64,7 +65,6 @@ export default () => {
     </View>
   )
 }
-
 
 const styles = createStyle({
   conatiner: {

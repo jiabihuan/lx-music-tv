@@ -1,5 +1,6 @@
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import { forwardRef, useImperativeHandle, useMemo, useRef, useState } from 'react'
-import { ScrollView, TouchableOpacity } from 'react-native'
+import {ScrollView} from 'react-native'
 import songlistState, { type SortInfo, type Source } from '@/store/songlist/state'
 import { useI18n } from '@/lang'
 import { useTheme } from '@/store/theme/hook'
@@ -14,7 +15,6 @@ export interface SortTabProps {
 export interface SortTabType {
   setSource: (source: Source, activeTab: SortInfo['id']) => void
 }
-
 
 export default forwardRef<SortTabType, SortTabProps>(({ onSortChange }, ref) => {
   const [sortList, setSortList] = useState<SortInfo[]>([])
@@ -52,7 +52,6 @@ export default forwardRef<SortTabType, SortTabProps>(({ onSortChange }, ref) => 
     </ScrollView>
   )
 })
-
 
 const styles = createStyle({
   container: {

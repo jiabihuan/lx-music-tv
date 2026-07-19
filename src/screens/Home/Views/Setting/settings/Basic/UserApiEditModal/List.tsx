@@ -1,6 +1,7 @@
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import { useCallback } from 'react'
 import Text from '@/components/common/Text'
-import { View, TouchableOpacity, ScrollView } from 'react-native'
+import {View, ScrollView} from 'react-native'
 import { confirmDialog, createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
@@ -72,7 +73,6 @@ export interface UserApiEditModalType {
   show: (rules: string) => void
 }
 
-
 export default () => {
   const userApiList = useUserApiList()
   const apiSource = useSettingValue('common.apiSource')
@@ -122,7 +122,6 @@ export default () => {
   )
 }
 
-
 const styles = createStyle({
   scrollView: {
     paddingHorizontal: 7,
@@ -161,5 +160,4 @@ const styles = createStyle({
     marginBottom: 15,
   },
 })
-
 

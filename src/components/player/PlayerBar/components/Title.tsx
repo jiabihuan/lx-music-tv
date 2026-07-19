@@ -1,4 +1,5 @@
-import { TouchableOpacity } from 'react-native'
+
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import { navigations } from '@/navigation'
 import { usePlayerMusicInfo } from '@/store/player/hook'
 // import { toast } from '@/utils/tools'
@@ -9,7 +10,6 @@ import playerState from '@/store/player/state'
 import Text from '@/components/common/Text'
 import { LIST_IDS } from '@/config/constant'
 import { createStyle, formatMusicName } from '@/utils/tools'
-
 
 export default ({ isHome }: { isHome: boolean }) => {
   // const { t } = useTranslation()

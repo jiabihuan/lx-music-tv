@@ -1,5 +1,6 @@
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
-import { TouchableOpacity, View } from 'react-native'
+import {View} from 'react-native'
 import { type InitState } from '@/store/hotSearch/state'
 import Button from '@/components/common/Button'
 import Text from '@/components/common/Text'
@@ -8,7 +9,6 @@ import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
 import { clearHistoryList, getSearchHistory, removeHistoryWord } from '@/core/search/search'
 import { Icon } from '@/components/common/Icon'
-
 
 export type List = NonNullable<InitState['sourceList'][keyof InitState['sourceList']]>
 
@@ -28,7 +28,6 @@ const ListItem = ({ keyword, onSearch, onRemove }: {
     </Button>
   )
 }
-
 
 interface HistorySearchProps {
   onSearch: (keyword: string) => void
@@ -94,7 +93,6 @@ export default forwardRef<HistorySearchType, HistorySearchProps>((props, ref) =>
       : null
   )
 })
-
 
 const styles = createStyle({
   titleContent: {

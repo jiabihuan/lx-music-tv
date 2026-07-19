@@ -1,5 +1,6 @@
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import { memo, useEffect, useRef } from 'react'
-import { View, TouchableOpacity, FlatList, type NativeScrollEvent, type NativeSyntheticEvent, type FlatListProps } from 'react-native'
+import {View, FlatList, type NativeScrollEvent, type NativeSyntheticEvent, type FlatListProps} from 'react-native'
 
 import { Icon } from '@/components/common/Icon'
 
@@ -26,14 +27,14 @@ const ListItem = memo(({ item, index, activeId, onPress, onShowMenu }: {
   onShowMenu: (item: LX.List.MyListInfo, index: number, position: { x: number, y: number, w: number, h: number }) => void
 }) => {
   const theme = useTheme()
-  const moreButtonRef = useRef<TouchableOpacity>(null)
+  const moreButtonRef = useRef<any>(null)
   const fetching = useListFetching(item.id)
 
   const active = activeId == item.id
 
   const handleShowMenu = () => {
     if (moreButtonRef.current?.measure) {
-      moreButtonRef.current.measure((fx, fy, width, height, px, py) => {
+      moreButtonRef.current.measure((fx: number, fy: number, width: number, height: number, px: number, py: number) => {
         // console.log(fx, fy, width, height, px, py)
         onShowMenu(item, index, { x: Math.ceil(px), y: Math.ceil(py), w: Math.ceil(width), h: Math.ceil(height) })
       })
@@ -69,7 +70,6 @@ const ListItem = memo(({ item, index, activeId, onPress, onShowMenu }: {
   )
 })
 
-
 export default ({ onShowMenu }: {
   onShowMenu: (info: { listInfo: LX.List.MyListInfo, index: number }, position: Position) => void
 }) => {
@@ -84,7 +84,6 @@ export default ({ onShowMenu }: {
       setActiveList(item.id)
     })
   }
-
 
   const handleScroll = ({ nativeEvent }: NativeSyntheticEvent<NativeScrollEvent>) => {
     void saveListPosition(LIST_SCROLL_POSITION_KEY, nativeEvent.contentOffset.y)
@@ -133,7 +132,6 @@ export default ({ onShowMenu }: {
     />
   )
 }
-
 
 const styles = createStyle({
   container: {

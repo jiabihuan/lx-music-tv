@@ -1,5 +1,6 @@
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import { memo } from 'react'
-import { View, Platform, TouchableOpacity } from 'react-native'
+import {View, Platform} from 'react-native'
 import { createStyle } from '@/utils/tools'
 import { type ListInfoItem } from '@/store/songlist/state'
 import Text from '@/components/common/Text'

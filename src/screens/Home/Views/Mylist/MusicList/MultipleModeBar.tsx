@@ -1,5 +1,6 @@
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import { useState, useRef, useCallback, useMemo, forwardRef, useImperativeHandle } from 'react'
-import { Animated, View, TouchableOpacity } from 'react-native'
+import {Animated, View} from 'react-native'
 
 import Text from '@/components/common/Text'
 import Button from '@/components/common/Button'
@@ -94,7 +95,6 @@ export default forwardRef<MultipleModeBarType, MultipleModeBarProps>(({ onSelect
       setAnimatPlayed(true)
     })
   }, [animFade, animTranslateY])
-
 
   const animaStyle = useMemo(() => ({
     ...styles.container,

@@ -1,4 +1,5 @@
-import { TouchableOpacity } from 'react-native'
+
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import { Icon } from '@/components/common/Icon'
 import { useIsPlay } from '@/store/player/hook'
 import { useTheme } from '@/store/theme/hook'
@@ -62,7 +63,6 @@ export default () => {
     </>
   )
 }
-
 
 const styles = createStyle({
   cotrolBtn: {

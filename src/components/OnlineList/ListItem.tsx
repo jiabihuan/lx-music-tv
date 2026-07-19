@@ -1,5 +1,6 @@
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import { memo, useRef } from 'react'
-import { View, TouchableOpacity } from 'react-native'
+import {View} from 'react-native'
 // import Button from '@/components/common/Button'
 import Text from '@/components/common/Text'
 import Badge, { type BadgeType } from '@/components/common/Badge'
@@ -45,10 +46,10 @@ export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu
 
   const isSelected = selectedList.includes(item)
 
-  const moreButtonRef = useRef<TouchableOpacity>(null)
+  const moreButtonRef = useRef<any>(null)
   const handleShowMenu = () => {
     if (moreButtonRef.current?.measure) {
-      moreButtonRef.current.measure((fx, fy, width, height, px, py) => {
+      moreButtonRef.current.measure((fx: number, fy: number, width: number, height: number, px: number, py: number) => {
         // console.log(fx, fy, width, height, px, py)
         onShowMenu(item, index, { x: Math.ceil(px), y: Math.ceil(py), w: Math.ceil(width), h: Math.ceil(height) })
       })

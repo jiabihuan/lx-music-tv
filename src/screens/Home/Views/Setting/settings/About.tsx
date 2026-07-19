@@ -1,5 +1,6 @@
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import { memo } from 'react'
-import { View, TouchableOpacity } from 'react-native'
+import {View} from 'react-native'
 
 import Section from '../components/Section'
 // import Button from './components/Button'
@@ -58,7 +59,6 @@ export default memo(() => {
     color: theme['c-primary-font'],
     // fontSize: 14,
   } as const
-
 
   return (
     <Section title={t('setting_about')}>

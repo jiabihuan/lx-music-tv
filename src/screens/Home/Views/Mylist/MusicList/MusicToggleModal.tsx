@@ -1,8 +1,9 @@
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import { useRef, useImperativeHandle, forwardRef, useState, useCallback, memo, useEffect } from 'react'
 import Text from '@/components/common/Text'
 import { createStyle } from '@/utils/tools'
 import Dialog, { type DialogType } from '@/components/common/Dialog'
-import { FlatList, ScrollView, TouchableOpacity, View, type FlatListProps as _FlatListProps } from 'react-native'
+import {FlatList, ScrollView, View, type FlatListProps as _FlatListProps} from 'react-native'
 import { scaleSizeH } from '@/utils/pixelRatio'
 import { useTheme } from '@/store/theme/hook'
 import { Icon } from '@/components/common/Icon'
@@ -21,7 +22,6 @@ import { playNext } from '@/core/player/player'
 
 type FlatListProps = _FlatListProps<LX.Music.MusicInfoOnline>
 const ITEM_HEIGHT = scaleSizeH(56)
-
 
 const Tabs = <T extends LX.OnlineSource>({ list, source, onChangeSource }: {
   list: T[]
@@ -286,7 +286,6 @@ const SourceDetail = ({ info, onConfirm, toggleSource }: { info: LX.Music.MusicI
   )
 }
 
-
 interface ModalType {
   show: (info: SelectInfo) => void
 }
@@ -404,7 +403,6 @@ export default forwardRef<MusicToggleModalType, {}>((props, ref) => {
       : null
   )
 })
-
 
 const styles = createStyle({
   container: {
@@ -535,5 +533,4 @@ const styles = createStyle({
     alignItems: 'center',
   },
 })
-
 

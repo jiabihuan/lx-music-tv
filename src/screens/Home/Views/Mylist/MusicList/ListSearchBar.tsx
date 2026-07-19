@@ -1,5 +1,6 @@
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import { useState, useRef, useCallback, useMemo, forwardRef, useImperativeHandle } from 'react'
-import { Animated, View, TouchableOpacity } from 'react-native'
+import {Animated, View} from 'react-native'
 
 import Text from '@/components/common/Text'
 import Input, { type InputType } from '@/components/common/Input'
@@ -35,7 +36,6 @@ const SearchInput = forwardRef<SearchInputType, SearchInputProps>(({ onSearch },
   )
 })
 
-
 export interface ListSearchBarProps {
   onSearch: (keywork: string) => void
   onExitSearch: () => void
@@ -67,7 +67,6 @@ export default forwardRef<ListSearchBarType, ListSearchBarProps>(({ onSearch, on
       handleHide()
     },
   }))
-
 
   const handleShow = useCallback(() => {
     // console.log('show List')
@@ -112,7 +111,6 @@ export default forwardRef<ListSearchBarType, ListSearchBarProps>(({ onSearch, on
       setAnimatPlayed(true)
     })
   }, [animFade, animTranslateY])
-
 
   const animaStyle = useMemo(() => ({
     ...styles.container,

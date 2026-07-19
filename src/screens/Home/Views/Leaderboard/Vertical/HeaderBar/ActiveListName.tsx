@@ -1,5 +1,5 @@
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import { forwardRef, useImperativeHandle, useState } from 'react'
-import { TouchableOpacity } from 'react-native'
 
 import { useTheme } from '@/store/theme/hook'
 import { createStyle } from '@/utils/tools'
@@ -28,7 +28,6 @@ export default forwardRef<ActiveListNameType, ActiveListNameProps>(({ onShowBoun
     </TouchableOpacity>
   )
 })
-
 
 const styles = createStyle({
   currentList: {

@@ -1,4 +1,5 @@
-import { StyleSheet, TouchableOpacity } from 'react-native'
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
+import {StyleSheet} from 'react-native'
 import { navigations } from '@/navigation'
 import { usePlayerMusicInfo } from '@/store/player/hook'
 import { scaleSizeH } from '@/utils/pixelRatio'
@@ -50,7 +51,6 @@ export default ({ isHome }: { isHome: boolean }) => {
     </TouchableOpacity>
   )
 }
-
 
 // const styles = StyleSheet.create({
 //   playInfoImg: {

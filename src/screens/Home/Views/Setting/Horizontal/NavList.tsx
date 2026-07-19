@@ -1,5 +1,6 @@
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import { memo, useRef, useState } from 'react'
-import { View, TouchableOpacity, FlatList, type FlatListProps } from 'react-native'
+import {View, FlatList, type FlatListProps} from 'react-native'
 
 import { Icon } from '@/components/common/Icon'
 
@@ -47,7 +48,6 @@ const ListItem = memo(({ id, activeId, onPress }: {
   )
 })
 
-
 export default ({ onChangeId }: {
   onChangeId: (id: SettingScreenIds) => void
 }) => {
@@ -90,7 +90,6 @@ export default ({ onChangeId }: {
     />
   )
 }
-
 
 const styles = createStyle({
   container: {

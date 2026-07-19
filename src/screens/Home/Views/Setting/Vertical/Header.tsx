@@ -1,5 +1,5 @@
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import { forwardRef, useImperativeHandle, useState } from 'react'
-import { TouchableOpacity } from 'react-native'
 
 import { Icon } from '@/components/common/Icon'
 import { BorderWidths } from '@/theme'
@@ -34,7 +34,6 @@ export default forwardRef<HeaderType, HeaderProps>(({ onShowNavBar }, ref) => {
     </TouchableOpacity>
   )
 })
-
 
 const styles = createStyle({
   currentList: {

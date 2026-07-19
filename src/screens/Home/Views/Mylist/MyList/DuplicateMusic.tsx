@@ -1,8 +1,9 @@
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import { useRef, useImperativeHandle, forwardRef, useState, useCallback, memo, useEffect } from 'react'
 import Text from '@/components/common/Text'
 import { createStyle } from '@/utils/tools'
 import Dialog, { type DialogType } from '@/components/common/Dialog'
-import { FlatList, TouchableOpacity, View, type FlatListProps as _FlatListProps } from 'react-native'
+import {FlatList, View, type FlatListProps as _FlatListProps} from 'react-native'
 import { scaleSizeH } from '@/utils/pixelRatio'
 import { useTheme } from '@/store/theme/hook'
 import { type DuplicateMusicItem, filterDuplicateMusic } from './utils'
@@ -267,7 +268,6 @@ export default forwardRef<DuplicateMusicType, {}>((props, ref) => {
   )
 })
 
-
 const styles = createStyle({
   container: {
     // flexGrow: 1,
@@ -324,5 +324,4 @@ const styles = createStyle({
     alignItems: 'center',
   },
 })
-
 

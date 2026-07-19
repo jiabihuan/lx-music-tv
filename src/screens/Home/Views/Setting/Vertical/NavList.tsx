@@ -1,5 +1,6 @@
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import { memo, useCallback, useState } from 'react'
-import { View, TouchableOpacity, ScrollView } from 'react-native'
+import {View, ScrollView} from 'react-native'
 
 import { useTheme } from '@/store/theme/hook'
 import { createStyle } from '@/utils/tools'
@@ -7,7 +8,6 @@ import Text from '@/components/common/Text'
 import { SETTING_SCREENS, type SettingScreenIds } from '../Main'
 import { useI18n } from '@/lang'
 import { BorderRadius, BorderWidths } from '@/theme'
-
 
 const ListItem = memo(({ id, activeId, onPress }: {
   onPress: (item: SettingScreenIds) => void
@@ -37,7 +37,6 @@ const ListItem = memo(({ id, activeId, onPress }: {
   )
 })
 
-
 export default ({ onChangeId }: {
   onChangeId: (id: SettingScreenIds) => void
 }) => {
@@ -59,7 +58,6 @@ export default ({ onChangeId }: {
     </ScrollView>
   )
 }
-
 
 const styles = createStyle({
   container: {

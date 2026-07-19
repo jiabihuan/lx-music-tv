@@ -1,5 +1,6 @@
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
-import { type NativeScrollEvent, type NativeSyntheticEvent, View, TouchableOpacity, Animated } from 'react-native'
+import {type NativeScrollEvent, type NativeSyntheticEvent, View, Animated} from 'react-native'
 import Text from '@/components/common/Text'
 import { createStyle } from '@/utils/tools'
 import { type Lines } from 'lrc-file-parser'
@@ -7,7 +8,6 @@ import { useTheme } from '@/store/theme/hook'
 import { BorderWidths } from '@/theme'
 import { formatPlayTime2 } from '@/utils'
 import { Icon } from '@/components/common/Icon'
-
 
 export interface PlayLineType {
   updateScrollInfo: (scrollInfo: NativeSyntheticEvent<NativeScrollEvent>['nativeEvent'] | null) => void

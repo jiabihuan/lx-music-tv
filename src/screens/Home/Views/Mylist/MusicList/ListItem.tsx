@@ -1,5 +1,6 @@
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import { memo, useRef } from 'react'
-import { View, TouchableOpacity } from 'react-native'
+import {View} from 'react-native'
 import { LIST_ITEM_HEIGHT } from '@/config/constant'
 // import { BorderWidths } from '@/theme'
 import { Icon } from '@/components/common/Icon'
@@ -11,7 +12,6 @@ import Text from '@/components/common/Text'
 import Badge from '@/components/common/Badge'
 
 export const ITEM_HEIGHT = scaleSizeH(LIST_ITEM_HEIGHT)
-
 
 export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPress, selectedList, rowInfo, isShowAlbumName, isShowInterval }: {
   item: LX.Music.MusicInfo
@@ -30,10 +30,10 @@ export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPres
   const isSelected = selectedList.includes(item)
   // console.log(item.name, selectedList, selectedList.includes(item))
   const isSupported = useAssertApiSupport(item.source)
-  const moreButtonRef = useRef<TouchableOpacity>(null)
+  const moreButtonRef = useRef<any>(null)
   const handleShowMenu = () => {
     if (moreButtonRef.current?.measure) {
-      moreButtonRef.current.measure((fx, fy, width, height, px, py) => {
+      moreButtonRef.current.measure((fx: number, fy: number, width: number, height: number, px: number, py: number) => {
         // console.log(fx, fy, width, height, px, py)
         onShowMenu(item, index, { x: Math.ceil(px), y: Math.ceil(py), w: Math.ceil(width), h: Math.ceil(height) })
       })
@@ -85,7 +85,6 @@ export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPres
     nextProps.selectedList.includes(nextProps.item) == prevProps.selectedList.includes(nextProps.item)
   )
 })
-
 
 const styles = createStyle({
   listItem: {

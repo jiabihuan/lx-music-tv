@@ -1,5 +1,5 @@
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react'
-import { TouchableOpacity } from 'react-native'
 
 import { Icon } from '@/components/common/Icon'
 import { BorderWidths } from '@/theme'
@@ -69,7 +69,6 @@ export default forwardRef<ActiveListType, ActiveListProps>(({ onShowSearchBar, o
     </TouchableOpacity>
   )
 })
-
 
 const styles = createStyle({
   currentList: {

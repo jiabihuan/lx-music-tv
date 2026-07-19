@@ -1,8 +1,9 @@
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import { updateSetting } from '@/core/common'
 import { setDesktopLyricColor } from '@/core/desktopLyric'
 import { useI18n } from '@/lang'
 import { memo } from 'react'
-import { StyleSheet, View, TouchableOpacity } from 'react-native'
+import {StyleSheet, View} from 'react-native'
 
 import SubTitle from '../../components/SubTitle'
 

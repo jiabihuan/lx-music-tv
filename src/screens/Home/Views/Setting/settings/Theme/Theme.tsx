@@ -1,5 +1,6 @@
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
-import { View, TouchableOpacity, type ImageSourcePropType } from 'react-native'
+import {View, type ImageSourcePropType} from 'react-native'
 import { setTheme } from '@/core/theme'
 import { useI18n } from '@/lang'
 import { useSettingValue } from '@/store/setting/hook'

@@ -1,5 +1,6 @@
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import { memo } from 'react'
-import { ScrollView, TouchableOpacity, View } from 'react-native'
+import {ScrollView, View} from 'react-native'
 import { useNavActiveId, useStatusbarHeight } from '@/store/common/hook'
 import { useTheme } from '@/store/theme/hook'
 import { Icon } from '@/components/common/Icon'
@@ -78,28 +79,29 @@ const Header = () => {
 
 type IdType = InitState['navActiveId'] | 'nav_exit' | 'back_home'
 
-const MenuItem = ({ id, icon, onPress }: {
+const MenuItem = ({ id, icon, onPress, isFirst }: {
   id: IdType
   icon: string
   onPress: (id: IdType) => void
+  isFirst?: boolean
 }) => {
   // const t = useI18n()
   const activeId = useNavActiveId()
   const theme = useTheme()
+  const active = activeId == id
 
-  return activeId == id
-    ? <View style={styles.menuItem}>
-        <View style={styles.iconContent}>
-          <Icon name={icon} size={20} color={theme['c-primary-font-active']} />
-        </View>
-        {/* <Text style={styles.text} size={14} color={theme['c-primary-font']}>{t(id)}</Text> */}
+  // active 态也保持可聚焦，避免 D-pad 无法重新选中当前菜单
+  return (
+    <TouchableOpacity
+      style={styles.menuItem}
+      onPress={() => { onPress(id) }}
+      hasTVPreferredFocus={isFirst}
+    >
+      <View style={styles.iconContent}>
+        <Icon name={icon} size={20} color={active ? theme['c-primary-font-active'] : theme['c-font-label']} />
       </View>
-    : <TouchableOpacity style={styles.menuItem} onPress={() => { onPress(id) }}>
-        <View style={styles.iconContent}>
-          <Icon name={icon} size={20} color={theme['c-font-label']} />
-        </View>
-        {/* <Text style={styles.text} size={14}>{t(id)}</Text> */}
-      </TouchableOpacity>
+    </TouchableOpacity>
+  )
 }
 
 export default memo(() => {
@@ -133,7 +135,7 @@ export default memo(() => {
       <Header />
       <ScrollView style={styles.menus}>
         <View style={styles.list}>
-          {NAV_MENUS.map(menu => <MenuItem key={menu.id} id={menu.id} icon={menu.icon} onPress={handlePress} />)}
+          {NAV_MENUS.map((menu, i) => <MenuItem key={menu.id} id={menu.id} icon={menu.icon} onPress={handlePress} isFirst={i === 0} />)}
         </View>
       </ScrollView>
       {

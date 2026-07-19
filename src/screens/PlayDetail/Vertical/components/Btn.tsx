@@ -1,4 +1,5 @@
-import { TouchableOpacity } from 'react-native'
+
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import { Icon } from '@/components/common/Icon'
 import { createStyle } from '@/utils/tools'
 import { scaleSizeH } from '@/utils/pixelRatio'

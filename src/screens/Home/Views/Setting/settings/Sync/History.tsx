@@ -1,5 +1,6 @@
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import { memo, useRef, useState, useCallback, useImperativeHandle, forwardRef } from 'react'
-import { View, TouchableOpacity, ScrollView } from 'react-native'
+import {View, ScrollView} from 'react-native'
 // import { gzip, ungzip } from 'pako'
 import { Icon } from '@/components/common/Icon'
 
@@ -94,7 +95,6 @@ const HistoryList = forwardRef<HistoryListType, HistoryListProps>(({ onSelect },
     newList.splice(index, 1)
     setList(newList)
   }, [list])
-
 
   return (
     visible

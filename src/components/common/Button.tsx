@@ -1,6 +1,7 @@
 import { useTheme } from '@/store/theme/hook'
 import { useMemo, useRef, useImperativeHandle, forwardRef } from 'react'
-import { Pressable, type PressableProps, StyleSheet, type View, type ViewProps } from 'react-native'
+import { type PressableProps, StyleSheet, type View, type ViewProps } from 'react-native'
+import FocusablePressable from '@/components/tv/FocusablePressable'
 // import { AppColors } from '@/theme'
 
 
@@ -32,7 +33,7 @@ export default forwardRef<BtnType, BtnProps>(({ ripple: propsRipple = {}, disabl
   }))
 
   return (
-    <Pressable
+    <FocusablePressable
       android_ripple={ripple}
       disabled={disabled}
       style={StyleSheet.compose({ opacity: disabled ? 0.3 : 1 }, style)}
@@ -40,7 +41,7 @@ export default forwardRef<BtnType, BtnProps>(({ ripple: propsRipple = {}, disabl
       ref={btnRef}
     >
       {children}
-    </Pressable>
+    </FocusablePressable>
   )
 })
 

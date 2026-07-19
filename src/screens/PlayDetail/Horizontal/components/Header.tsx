@@ -1,6 +1,7 @@
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import { memo, useRef } from 'react'
 
-import { View, StyleSheet, TouchableOpacity } from 'react-native'
+import {View, StyleSheet} from 'react-native'
 
 import { Icon } from '@/components/common/Icon'
 import { pop } from '@/navigation'
@@ -20,7 +21,6 @@ export const HEADER_HEIGHT = scaleSizeH(_HEADER_HEIGHT)
 const Title = () => {
   const theme = useTheme()
   const musicInfo = usePlayerMusicInfo()
-
 
   return (
     <View style={styles.titleContent}>
@@ -55,7 +55,6 @@ export default memo(() => {
     </View>
   )
 })
-
 
 const styles = StyleSheet.create({
   container: {

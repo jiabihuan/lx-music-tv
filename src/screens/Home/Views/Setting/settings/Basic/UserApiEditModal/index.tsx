@@ -1,6 +1,7 @@
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import { useRef, useImperativeHandle, forwardRef, useState } from 'react'
 import Text from '@/components/common/Text'
-import { View, TouchableOpacity } from 'react-native'
+import {View} from 'react-native'
 import { createStyle, openUrl } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
@@ -51,7 +52,6 @@ import ImportBtn from './ImportBtn'
 //     </View>
 //   )
 // })
-
 
 // export interface UserApiEditModalProps {
 //   onSave: (rules: string) => void
@@ -130,7 +130,6 @@ export default forwardRef<UserApiEditModalType, {}>((props, ref) => {
   )
 })
 
-
 const styles = createStyle({
   content: {
     // flexGrow: 1,
@@ -172,5 +171,4 @@ const styles = createStyle({
     marginRight: 15,
   },
 })
-
 

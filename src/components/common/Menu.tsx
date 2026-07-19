@@ -1,5 +1,6 @@
 import { useImperativeHandle, forwardRef, useMemo, useRef, useState, type Ref } from 'react'
-import { View, Animated, TouchableHighlight } from 'react-native'
+import { View, Animated } from 'react-native'
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import { useWindowSize } from '@/utils/hooks'
 
 import Modal, { type ModalType } from './Modal'
@@ -140,24 +141,15 @@ const Menu = ({
                     <Text style={{ textAlign: center ? 'center' : 'left' }} size={fontSize} numberOfLines={1}>{menu.label}</Text>
                   </View>
                 )
-              : menu.action == activeId
-                ? (
-                    <View
+              : (
+                    <TouchableOpacity
                       key={menu.action}
                       style={{ ...styles.menuItem, width: menuItemStyle.width, height: menuItemStyle.height }}
-                    >
-                      <Text style={{ textAlign: center ? 'center' : 'left' }} color={theme['c-primary-font-active']} size={fontSize} numberOfLines={1}>{menu.label}</Text>
-                    </View>
-                  )
-                : (
-                    <TouchableHighlight
-                      key={menu.action}
-                      style={{ ...styles.menuItem, width: menuItemStyle.width, height: menuItemStyle.height }}
-                      underlayColor={theme['c-primary-background-active']}
+                      hasTVPreferredFocus={index === 0}
                       onPress={() => { menuPress(menu) }}
                     >
-                      <Text style={{ textAlign: center ? 'center' : 'left' }} size={fontSize} numberOfLines={1}>{menu.label}</Text>
-                    </TouchableHighlight>
+                      <Text style={{ textAlign: center ? 'center' : 'left' }} color={menu.action == activeId ? theme['c-primary-font-active'] : undefined} size={fontSize} numberOfLines={1}>{menu.label}</Text>
+                    </TouchableOpacity>
                   )
 
           ))

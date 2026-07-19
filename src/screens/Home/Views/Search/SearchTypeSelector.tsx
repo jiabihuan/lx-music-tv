@@ -1,5 +1,6 @@
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import { useEffect, useMemo, useState } from 'react'
-import { ScrollView, TouchableOpacity } from 'react-native'
+import {ScrollView} from 'react-native'
 
 import { createStyle } from '@/utils/tools'
 import { type SearchType } from '@/store/search/state'
