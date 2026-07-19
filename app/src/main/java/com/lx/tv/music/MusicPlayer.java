@@ -1,14 +1,17 @@
 package com.lx.tv.music;
 
 import android.content.Context;
-import android.media.AudioAttributes;
-import android.media.AudioManager;
-import android.media.MediaPlayer;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.text.TextUtils;
 import android.util.Log;
+
+import androidx.media3.common.MediaItem;
+import androidx.media3.common.PlaybackException;
+import androidx.media3.common.Player;
+import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.session.MediaSession;
 
 import com.lx.tv.music.userapi.UserApiEngine;
 import com.lx.tv.music.userapi.UserApiCallback;
@@ -22,12 +25,12 @@ import java.util.Random;
 
 /**
  * 音乐播放器
- * 基于android.media.MediaPlayer实现
+ * 基于 androidx.media3 ExoPlayer 实现，提供更稳定的播放和更好的格式支持。
  *
  * 工作流程：
  * 1. play(MusicInfo) -> 生成requestKey -> sendAction('request', {requestKey, data:{source, action:'musicUrl', info:{type, musicInfo}}})
  * 2. UserApiEngine onRequest回调 -> 由外部HttpExecutor执行HTTP请求 -> sendAction('response', {...})
- * 3. UserApiEngine onResponse回调 -> 获取url -> MediaPlayer.setDataSource(url) -> prepareAsync -> start
+ * 3. UserApiEngine onResponse回调 -> 获取url -> ExoPlayer.setMediaItem(MediaItem.fromUri(url)) -> prepare -> play
  *
  * 通过UserApiEngine.UserApiCallback接收JS音源回调
  */
@@ -46,7 +49,8 @@ public class MusicPlayer implements UserApiCallback {
     private final UserApiEngine userApiEngine;
     private final PlaylistManager playlistManager;
 
-    private MediaPlayer mediaPlayer;
+    private ExoPlayer exoPlayer;
+    private MediaSession mediaSession;
     private PlayerCallback callback;
 
     /** 当前播放歌曲 */
@@ -203,8 +207,8 @@ public class MusicPlayer implements UserApiCallback {
      * 暂停
      */
     public void pause() {
-        if (mediaPlayer != null && isPlaying && !isPaused) {
-            mediaPlayer.pause();
+        if (exoPlayer != null && isPlaying && !isPaused) {
+            exoPlayer.pause();
             isPaused = true;
             isPlaying = false;
             stopProgressUpdate();
@@ -217,14 +221,14 @@ public class MusicPlayer implements UserApiCallback {
      * 恢复播放
      */
     public void resume() {
-        if (mediaPlayer != null && isPaused) {
-            mediaPlayer.start();
+        if (exoPlayer != null && isPaused) {
+            exoPlayer.play();
             isPaused = false;
             isPlaying = true;
             startProgressUpdate();
             if (callback != null) callback.onPlayResume();
             Log.i(TAG, "Resumed");
-        } else if (mediaPlayer == null && currentMusic != null && currentUrl != null) {
+        } else if (exoPlayer == null && currentMusic != null && currentUrl != null) {
             // 重新启动播放
             startPlayback(currentUrl);
         }
@@ -270,9 +274,9 @@ public class MusicPlayer implements UserApiCallback {
      * @param position 毫秒
      */
     public void seekTo(int position) {
-        if (mediaPlayer != null) {
+        if (exoPlayer != null) {
             try {
-                mediaPlayer.seekTo(position);
+                exoPlayer.seekTo(position);
             } catch (Exception e) {
                 Log.e(TAG, "seekTo failed: " + e.getMessage());
             }
@@ -292,9 +296,9 @@ public class MusicPlayer implements UserApiCallback {
     }
 
     public int getCurrentPosition() {
-        if (mediaPlayer != null && (isPlaying || isPaused)) {
+        if (exoPlayer != null && (isPlaying || isPaused)) {
             try {
-                return mediaPlayer.getCurrentPosition();
+                return (int) exoPlayer.getCurrentPosition();
             } catch (Exception e) {
                 return 0;
             }
@@ -303,9 +307,9 @@ public class MusicPlayer implements UserApiCallback {
     }
 
     public int getDuration() {
-        if (mediaPlayer != null && (isPlaying || isPaused)) {
+        if (exoPlayer != null && (isPlaying || isPaused)) {
             try {
-                return mediaPlayer.getDuration();
+                return (int) exoPlayer.getDuration();
             } catch (Exception e) {
                 return currentMusic != null ? currentMusic.getIntervalSeconds() * 1000 : 0;
             }
@@ -342,18 +346,7 @@ public class MusicPlayer implements UserApiCallback {
 
     private void stopInternal() {
         stopProgressUpdate();
-        if (mediaPlayer != null) {
-            try {
-                if (mediaPlayer.isPlaying()) mediaPlayer.stop();
-            } catch (Exception ignored) {
-            }
-            try {
-                mediaPlayer.reset();
-                mediaPlayer.release();
-            } catch (Exception ignored) {
-            }
-            mediaPlayer = null;
-        }
+        releaseExoPlayer();
         isPlaying = false;
         isPaused = false;
         isPreparing = false;
@@ -439,7 +432,7 @@ public class MusicPlayer implements UserApiCallback {
     }
 
     /**
-     * 使用MediaPlayer开始播放URL
+     * 使用ExoPlayer开始播放URL
      */
     private void startPlayback(String url) {
         if (TextUtils.isEmpty(url)) {
@@ -447,102 +440,104 @@ public class MusicPlayer implements UserApiCallback {
             return;
         }
         try {
-            // 销毁旧实例并重建，避免reset后再设置监听器遗漏的问题
-            if (mediaPlayer != null) {
-                try {
-                    if (mediaPlayer.isPlaying()) mediaPlayer.stop();
-                } catch (Exception ignored) {
-                }
-                try {
-                    mediaPlayer.reset();
-                    mediaPlayer.release();
-                } catch (Exception ignored) {
-                }
-                mediaPlayer = null;
-            }
-            mediaPlayer = new MediaPlayer();
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-                AudioAttributes attrs = new AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_MEDIA)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                        .build();
-                mediaPlayer.setAudioAttributes(attrs);
-            } else {
-                mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-            }
-            mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+            // 释放旧实例
+            releaseExoPlayer();
+            // 创建ExoPlayer实例
+            exoPlayer = new ExoPlayer.Builder(context).build();
+            exoPlayer.setPlayWhenReady(true);
+            exoPlayer.addListener(new Player.Listener() {
                 @Override
-                public void onPrepared(MediaPlayer mp) {
-                    try {
-                        isPreparing = false;
-                        isPlaying = true;
-                        isPaused = false;
-                        mp.start();
-                        startProgressUpdate();
-                        notifyStatus("正在播放");
-                        if (callback != null && currentMusic != null) {
-                            callback.onPlayStart(currentMusic);
-                        }
-                        Log.i(TAG, "Playback started");
-                    } catch (Throwable t) {
-                        Log.e(TAG, "onPrepared crashed: " + t.getMessage());
-                        notifyError(currentMusic, "播放启动失败: " + t.getMessage());
+                public void onPlaybackStateChanged(int playbackState) {
+                    switch (playbackState) {
+                        case Player.STATE_READY:
+                            isPreparing = false;
+                            isPlaying = true;
+                            isPaused = false;
+                            startProgressUpdate();
+                            notifyStatus("正在播放");
+                            if (callback != null && currentMusic != null) {
+                                callback.onPlayStart(currentMusic);
+                            }
+                            Log.i(TAG, "Playback started");
+                            break;
+                        case Player.STATE_BUFFERING:
+                            if (!isPlaying) {
+                                notifyStatus("缓冲中...");
+                            }
+                            break;
+                        case Player.STATE_ENDED:
+                            Log.i(TAG, "Playback completed");
+                            isPlaying = false;
+                            isPaused = false;
+                            stopProgressUpdate();
+                            if (callback != null && currentMusic != null) {
+                                callback.onPlayComplete(currentMusic);
+                            }
+                            if (autoPlayNext) {
+                                next();
+                            }
+                            break;
+                        case Player.STATE_IDLE:
+                            isPlaying = false;
+                            isPreparing = false;
+                            stopProgressUpdate();
+                            break;
                     }
                 }
-            });
-            mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+
                 @Override
-                public void onCompletion(MediaPlayer mp) {
-                    try {
-                        Log.i(TAG, "Playback completed");
-                        isPlaying = false;
-                        stopProgressUpdate();
-                        if (callback != null && currentMusic != null) {
-                            callback.onPlayComplete(currentMusic);
-                        }
-                        if (autoPlayNext) {
-                            next();
-                        }
-                    } catch (Throwable t) {
-                        Log.e(TAG, "onCompletion crashed: " + t.getMessage());
-                    }
-                }
-            });
-            mediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
-                @Override
-                public boolean onError(MediaPlayer mp, int what, int extra) {
-                    Log.e(TAG, "MediaPlayer error: what=" + what + " extra=" + extra);
+                public void onPlayerError(PlaybackException error) {
+                    Log.e(TAG, "ExoPlayer error: " + error.getMessage());
                     isPlaying = false;
                     isPreparing = false;
                     stopProgressUpdate();
-                    String errMsg = "播放错误(" + what + "," + extra + ")";
-                    notifyError(currentMusic, errMsg);
-                    return true;
-                }
-            });
-            mediaPlayer.setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
-                @Override
-                public void onBufferingUpdate(MediaPlayer mp, int percent) {
-                    // 可扩展：通知缓冲进度
+                    notifyError(currentMusic, "播放错误: " + error.getMessage());
                 }
             });
             isPreparing = true;
             notifyStatus("缓冲中...");
-            mediaPlayer.setDataSource(url);
-            mediaPlayer.prepareAsync();
+            MediaItem mediaItem = MediaItem.fromUri(url);
+            exoPlayer.setMediaItem(mediaItem);
+            exoPlayer.prepare();
+            // 创建MediaSession，支持媒体键和系统媒体控制
+            releaseMediaSession();
+            try {
+                mediaSession = new MediaSession.Builder(context, exoPlayer).build();
+            } catch (Exception e) {
+                Log.w(TAG, "MediaSession creation failed: " + e.getMessage());
+            }
         } catch (Throwable e) {
             Log.e(TAG, "startPlayback failed: " + e.getMessage());
             isPreparing = false;
-            // 释放可能处于异常状态的MediaPlayer
-            if (mediaPlayer != null) {
-                try {
-                    mediaPlayer.reset();
-                    mediaPlayer.release();
-                } catch (Exception ignored) {
-                }
-                mediaPlayer = null;
-            }
+            releaseExoPlayer();
             notifyError(currentMusic, "播放失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 释放ExoPlayer实例
+     */
+    private void releaseExoPlayer() {
+        releaseMediaSession();
+        if (exoPlayer != null) {
+            try {
+                exoPlayer.release();
+            } catch (Exception ignored) {
+            }
+            exoPlayer = null;
+        }
+    }
+
+    /**
+     * 释放MediaSession
+     */
+    private void releaseMediaSession() {
+        if (mediaSession != null) {
+            try {
+                mediaSession.release();
+            } catch (Exception ignored) {
+            }
+            mediaSession = null;
         }
     }
 
@@ -556,10 +551,10 @@ public class MusicPlayer implements UserApiCallback {
     }
 
     private void updateProgress() {
-        if (mediaPlayer != null && isPlaying) {
+        if (exoPlayer != null && isPlaying) {
             try {
-                int current = mediaPlayer.getCurrentPosition() / 1000;
-                int total = mediaPlayer.getDuration() / 1000;
+                int current = (int) exoPlayer.getCurrentPosition() / 1000;
+                int total = (int) exoPlayer.getDuration() / 1000;
                 notifyProgress(current, total);
             } catch (Exception e) {
                 // ignore

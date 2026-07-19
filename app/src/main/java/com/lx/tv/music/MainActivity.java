@@ -6,18 +6,23 @@ import android.app.UiModeManager;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.ScrollView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -32,6 +37,7 @@ import com.lx.tv.music.userapi.UserApiEngine;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -87,6 +93,15 @@ public class MainActivity extends Activity implements UserApiCallback,
     private TextView tvTotalTime;
     private SeekBar seekBar;
     private ImageButton btnPrev;
+    private ImageView ivAlbumCover;
+
+    // 歌词显示
+    private View lyricPanel;
+    private LinearLayout lyricContainer;
+    private ScrollView lyricScroll;
+    private List<LyricParser.LyricLine> currentLyrics;
+    private int currentLyricLine = -1;
+    private boolean lyricPanelVisible = false;
     private ImageButton btnPlayPause;
     private ImageButton btnNext;
     private TextView tvPlayMode;
@@ -186,6 +201,10 @@ public class MainActivity extends Activity implements UserApiCallback,
         btnPlayPause = findViewById(R.id.btn_play_pause);
         btnNext = findViewById(R.id.btn_next);
         tvPlayMode = findViewById(R.id.tv_play_mode);
+        ivAlbumCover = findViewById(R.id.iv_album_cover);
+        lyricPanel = findViewById(R.id.lyric_panel);
+        lyricContainer = findViewById(R.id.lyric_container);
+        lyricScroll = findViewById(R.id.lyric_scroll);
 
         // RecyclerView 配置
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -319,6 +338,7 @@ public class MainActivity extends Activity implements UserApiCallback,
 
         searchManager = new MusicSearchManager(userApiEngine);
         searchManager.setSearchCallback(this);
+        searchManager.setSearchHttpClient(httpClient);
 
         // 排行榜API管理器
         rankApiManager = new RankApiManager(httpClient);
@@ -552,6 +572,10 @@ public class MainActivity extends Activity implements UserApiCallback,
             btnPlayPause.setImageResource(R.drawable.ic_pause);
             playerBar.setVisibility(View.VISIBLE);
             musicAdapter.setPlayingMusic(music);
+            // 加载专辑封面
+            loadAlbumCover(music);
+            // 请求歌词
+            requestLyric(music);
         });
     }
 
@@ -588,6 +612,8 @@ public class MainActivity extends Activity implements UserApiCallback,
                 tvCurrentTime.setText(formatTime(currentSec));
                 tvTotalTime.setText(formatTime(totalSec));
             }
+            // 更新歌词高亮
+            updateLyricHighlight(currentSec * 1000L);
         });
     }
 
@@ -783,6 +809,18 @@ public class MainActivity extends Activity implements UserApiCallback,
                 if (musicPlayer != null && musicPlayer.isPlaying()) musicPlayer.pause();
                 return true;
             }
+            case KeyEvent.KEYCODE_INFO:
+            case KeyEvent.KEYCODE_GUIDE: {
+                // 切换歌词面板显示/隐藏
+                if (lyricPanelVisible) {
+                    hideLyricPanel();
+                } else if (currentLyrics != null && !currentLyrics.isEmpty()) {
+                    showLyricPanel();
+                } else {
+                    Toast.makeText(this, "暂无歌词", Toast.LENGTH_SHORT).show();
+                }
+                return true;
+            }
         }
         return super.onKeyDown(keyCode, event);
     }
@@ -911,5 +949,156 @@ public class MainActivity extends Activity implements UserApiCallback,
         int min = seconds / 60;
         int sec = seconds % 60;
         return String.format("%02d:%02d", min, sec);
+    }
+
+    // ============ 歌词显示 ============
+
+    /**
+     * 请求歌词（通过音源脚本）
+     */
+    private void requestLyric(MusicInfo music) {
+        currentLyrics = null;
+        currentLyricLine = -1;
+        lyricContainer.removeAllViews();
+        if (music == null || searchManager == null) {
+            hideLyricPanel();
+            return;
+        }
+        searchManager.getLyric(music, new MusicSearchManager.LyricRequestListener() {
+            @Override
+            public void onLyricSuccess(String lyricContent) {
+                mainHandler.post(() -> {
+                    if (TextUtils.isEmpty(lyricContent)) {
+                        hideLyricPanel();
+                        return;
+                    }
+                    // 尝试解析带翻译的歌词
+                    try {
+                        JSONObject json = new JSONObject(lyricContent);
+                        String lrc = json.optString("lyric", "");
+                        String tlyric = json.optString("tlyric", "");
+                        if (!TextUtils.isEmpty(lrc)) {
+                            currentLyrics = LyricParser.parseLyricWithTranslation(lrc, tlyric);
+                        }
+                    } catch (JSONException e) {
+                        // 不是JSON格式，直接作为LRC解析
+                        currentLyrics = LyricParser.parseLyric(lyricContent);
+                    }
+                    if (currentLyrics == null || currentLyrics.isEmpty()) {
+                        hideLyricPanel();
+                    } else {
+                        showLyricPanel();
+                        buildLyricViews();
+                    }
+                });
+            }
+
+            @Override
+            public void onLyricError(String errorMessage) {
+                mainHandler.post(() -> hideLyricPanel());
+            }
+        });
+    }
+
+    /**
+     * 构建歌词行View
+     */
+    private void buildLyricViews() {
+        lyricContainer.removeAllViews();
+        if (currentLyrics == null) return;
+        for (int i = 0; i < currentLyrics.size(); i++) {
+            LyricParser.LyricLine line = currentLyrics.get(i);
+            TextView tv = new TextView(this);
+            tv.setText(line.content);
+            tv.setTextColor(0x88FFFFFF);
+            tv.setTextSize(16f);
+            tv.setPadding(8, 16, 8, 16);
+            tv.setGravity(Gravity.CENTER);
+            tv.setMaxLines(2);
+            tv.setTag(i);
+            lyricContainer.addView(tv);
+        }
+        currentLyricLine = -1;
+    }
+
+    /**
+     * 更新歌词高亮和滚动位置
+     */
+    private void updateLyricHighlight(long currentTimeMs) {
+        if (currentLyrics == null || currentLyrics.isEmpty()) return;
+        int newLine = LyricParser.getCurrentLine(currentLyrics, currentTimeMs);
+        if (newLine == currentLyricLine) return;
+        currentLyricLine = newLine;
+        // 更新所有行颜色
+        for (int i = 0; i < lyricContainer.getChildCount(); i++) {
+            TextView tv = (TextView) lyricContainer.getChildAt(i);
+            int idx = (int) tv.getTag();
+            if (idx == newLine) {
+                tv.setTextColor(0xFFFFC107);
+                tv.setTextSize(18f);
+                tv.setTypeface(null, android.graphics.Typeface.BOLD);
+            } else {
+                tv.setTextColor(0x88FFFFFF);
+                tv.setTextSize(16f);
+                tv.setTypeface(null, android.graphics.Typeface.NORMAL);
+            }
+        }
+        // 滚动到当前行
+        if (newLine >= 0 && newLine < lyricContainer.getChildCount()) {
+            View target = lyricContainer.getChildAt(newLine);
+            final int scrollY = target.getTop() - lyricScroll.getHeight() / 2 + target.getHeight() / 2;
+            lyricScroll.post(() -> lyricScroll.smoothScrollTo(0, Math.max(0, scrollY)));
+        }
+    }
+
+    private void showLyricPanel() {
+        if (lyricPanel != null && !lyricPanelVisible) {
+            lyricPanel.setVisibility(View.VISIBLE);
+            lyricPanelVisible = true;
+        }
+    }
+
+    private void hideLyricPanel() {
+        if (lyricPanel != null) {
+            lyricPanel.setVisibility(View.GONE);
+        }
+        lyricPanelVisible = false;
+        currentLyricLine = -1;
+    }
+
+    // ============ 专辑封面 ============
+
+    /**
+     * 加载专辑封面
+     */
+    private void loadAlbumCover(MusicInfo music) {
+        if (music == null || TextUtils.isEmpty(music.picUrl)) {
+            ivAlbumCover.setImageResource(R.drawable.ic_music_note);
+            return;
+        }
+        // 在工作线程下载图片
+        new Thread(() -> {
+            try {
+                okhttp3.Request request = new okhttp3.Request.Builder()
+                        .url(music.picUrl)
+                        .header("User-Agent", "Mozilla/5.0")
+                        .get()
+                        .build();
+                okhttp3.Response response = httpClient.newCall(request).execute();
+                if (response.isSuccessful() && response.body() != null) {
+                    byte[] bytes = response.body().bytes();
+                    response.close();
+                    Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                    if (bitmap != null) {
+                        mainHandler.post(() -> ivAlbumCover.setImageBitmap(bitmap));
+                        return;
+                    }
+                }
+                response.close();
+            } catch (IOException e) {
+                Log.w(TAG, "loadAlbumCover failed: " + e.getMessage());
+            }
+            mainHandler.post(() -> ivAlbumCover.setImageResource(R.drawable.ic_music_note));
+        }).start();
     }
 }

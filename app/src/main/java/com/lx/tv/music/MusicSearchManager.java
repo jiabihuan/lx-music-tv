@@ -17,15 +17,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicInteger;
+
+import okhttp3.OkHttpClient;
 
 /**
  * 音乐搜索管理器
- * 调用UserApiEngine发送搜索请求，管理搜索结果列表
- *
- * 落雪音源协议说明：
- * - 完整搜索流程需要通过lx.request发起HTTP请求到音源API，解析返回JSON
- * - TV版简化：搜索结果使用测试数据（演示用途），获取播放URL通过音源脚本的musicUrl action
+ * 通过 SearchApiManager 调用各音源公开搜索API获取真实搜索结果，
+ * 通过 UserApiEngine 获取播放URL和歌词。
  *
  * 搜索结果数据结构：List<MusicInfo>
  */
@@ -42,10 +40,11 @@ public class MusicSearchManager implements UserApiCallback {
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final Random random = new Random();
 
+    /** 真实搜索API管理器（调用各音源公开搜索接口） */
+    private SearchApiManager searchApiManager;
+
     /** requestKey -> UrlRequestListener 映射，用于musicUrl请求 */
     private final Map<String, UrlRequestListener> urlRequestMap = new HashMap<>();
-    /** requestKey -> SearchRequestListener 映射，用于搜索请求 */
-    private final Map<String, SearchRequestListener> searchRequestMap = new HashMap<>();
 
     /** 当前已加载的音源能力信息：source -> {actions, qualitys} */
     private final Map<String, SourceCapability> sourceCapabilities = new HashMap<>();
@@ -81,16 +80,17 @@ public class MusicSearchManager implements UserApiCallback {
         void onUrlError(String errorMessage);
     }
 
-    /** 搜索请求监听器（用于完整搜索流程） */
-    public interface SearchRequestListener {
-        void onSearchSuccess(List<MusicInfo> results);
-        void onSearchError(String errorMessage);
-    }
-
     public MusicSearchManager(UserApiEngine userApiEngine) {
         this.userApiEngine = userApiEngine;
         // 注意：不在此处调用 userApiEngine.setCallback(this)
         // MainActivity 作为统一回调分发器，会将事件分发到 MusicPlayer 和 MusicSearchManager
+    }
+
+    /**
+     * 设置OkHttpClient用于搜索API请求
+     */
+    public void setSearchHttpClient(OkHttpClient httpClient) {
+        this.searchApiManager = new SearchApiManager(httpClient);
     }
 
     public void setSearchCallback(SearchCallback callback) {
@@ -99,7 +99,8 @@ public class MusicSearchManager implements UserApiCallback {
 
     /**
      * 搜索音乐
-     * 简化实现：使用测试数据演示。完整实现需要通过音源脚本发送搜索HTTP请求。
+     * 通过 SearchApiManager 并发调用各音源（酷我/酷狗/QQ/网易云/咪咕）的公开搜索API，
+     * 获取真实搜索结果并合并返回。任一音源失败不影响其他音源。
      *
      * @param keyword 搜索关键词
      */
@@ -112,24 +113,47 @@ public class MusicSearchManager implements UserApiCallback {
             Log.w(TAG, "Search already in progress");
             return;
         }
+        if (searchApiManager == null) {
+            if (searchCallback != null) searchCallback.onSearchError("搜索引擎未初始化");
+            return;
+        }
         isSearching = true;
         currentResults = new ArrayList<>();
         if (searchCallback != null) searchCallback.onSearchStart(keyword);
 
-        // 简化版：使用测试数据模拟搜索结果
-        // 完整实现：对每个支持的音源发送搜索HTTP请求并解析
-        mainHandler.postDelayed(new Runnable() {
+        // 调用真实搜索API，并发搜索所有音源
+        searchApiManager.search(keyword, new SearchApiManager.SearchCallback() {
             @Override
-            public void run() {
-                List<MusicInfo> testResults = generateTestResults(keyword);
-                currentResults.addAll(testResults);
-                if (searchCallback != null) {
-                    searchCallback.onSearchResult(testResults, "kw");
-                    searchCallback.onSearchComplete(keyword, currentResults);
-                }
-                isSearching = false;
+            public void onSearchStart(String kw) {
+                // 已在上面通知过
             }
-        }, 300);
+
+            @Override
+            public void onSourceResult(List<MusicInfo> results, String source) {
+                synchronized (currentResults) {
+                    currentResults.addAll(results);
+                }
+                if (searchCallback != null) {
+                    searchCallback.onSearchResult(results, source);
+                }
+            }
+
+            @Override
+            public void onSearchComplete(String kw, List<MusicInfo> allResults) {
+                isSearching = false;
+                if (searchCallback != null) {
+                    searchCallback.onSearchComplete(kw, allResults);
+                }
+            }
+
+            @Override
+            public void onSearchError(String errorMessage) {
+                isSearching = false;
+                if (searchCallback != null) {
+                    searchCallback.onSearchError(errorMessage);
+                }
+            }
+        });
     }
 
     /**
@@ -255,7 +279,6 @@ public class MusicSearchManager implements UserApiCallback {
      */
     public void cancelAllRequests() {
         urlRequestMap.clear();
-        searchRequestMap.clear();
     }
 
     /**
@@ -379,7 +402,6 @@ public class MusicSearchManager implements UserApiCallback {
     @Override
     public void onCancelRequest(String requestKey) {
         urlRequestMap.remove(requestKey);
-        searchRequestMap.remove(requestKey);
     }
 
     @Override
@@ -390,53 +412,5 @@ public class MusicSearchManager implements UserApiCallback {
     @Override
     public void onLog(String type, String log) {
         Log.d(TAG, "[UserApi:" + type + "] " + log);
-    }
-
-    // ============ 测试数据生成 ============
-
-    /**
-     * 生成测试搜索结果（简化版搜索）
-     * 实际项目中应通过音源脚本发送搜索HTTP请求并解析返回的JSON
-     */
-    private List<MusicInfo> generateTestResults(String keyword) {
-        List<MusicInfo> results = new ArrayList<>();
-        // 模拟5个音源的搜索结果
-        String[] songSuffixes = {"", " (Live)", " (Remix)", " (DJ版)", " (伴奏)"};
-        String[] singers = {"周杰伦", "林俊杰", "邓紫棋", "薛之谦", "毛不易",
-                "华晨宇", "李荣浩", "田馥甄", "陈奕迅", "张学友"};
-        String[] albums = {"范特西", "第二天堂", "新的心跳", "初学者", "平凡的一天",
-                "新世界", "模特", "小幸运", "Stranger Under My Skin", "True"};
-
-        for (int sourceIdx = 0; sourceIdx < SUPPORTED_SOURCES.length; sourceIdx++) {
-            String source = SUPPORTED_SOURCES[sourceIdx];
-            int count = 3 + random.nextInt(3); // 每个音源3-5首
-            for (int i = 0; i < count; i++) {
-                MusicInfo info = new MusicInfo();
-                info.source = source;
-                info.songName = keyword + " - " + songsForSource(source, i);
-                info.singer = singers[random.nextInt(singers.length)];
-                info.album = albums[random.nextInt(albums.length)];
-                info.songmid = source + "_sm_" + System.currentTimeMillis() + "_" + i;
-                info.id = source + "_" + info.songmid;
-                int totalSec = 180 + random.nextInt(180);
-                info.interval = String.format("%02d:%02d", totalSec / 60, totalSec % 60);
-                // 各源专用字段
-                if ("kg".equals(source)) {
-                    info.hash = "kg_hash_" + i + "_" + random.nextInt(100000);
-                } else if ("tx".equals(source)) {
-                    info.strMediaMid = "tx_mid_" + i + "_" + random.nextInt(100000);
-                } else if ("mg".equals(source)) {
-                    info.copyrightId = "mg_ci_" + i + "_" + random.nextInt(100000);
-                }
-                results.add(info);
-            }
-        }
-        return results;
-    }
-
-    private String songsForSource(String source, int idx) {
-        String[] songs = {"晴天", "稻香", "青花瓷", "夜曲", "七里香",
-                "红豆", "童话", "遇见", "后来", "勇气"};
-        return songs[idx % songs.length];
     }
 }
