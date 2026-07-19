@@ -116,7 +116,7 @@ export default forwardRef<ConfirmAlertType, ConfirmAlertProps>(({
           <Text color={theme['c-button-font']}>{cancelText || t('cancel')}</Text>
         </Button>
         {showConfirm
-          ? <Button style={{ ...styles.btn, ...(reverseBtn ? styles.btnReversedDirection : styles.btnDirection), backgroundColor: theme['c-button-background'] }} onPress={onConfirm} disabled={disabledConfirm}>
+          ? <Button style={{ ...styles.btn, ...(reverseBtn ? styles.btnReversedDirection : styles.btnDirection), backgroundColor: theme['c-button-background'] }} onPress={onConfirm} disabled={disabledConfirm} hasTVPreferredFocus>
               <Text color={theme['c-button-font']}>{confirmText || t('confirm')}</Text>
             </Button>
           : null}

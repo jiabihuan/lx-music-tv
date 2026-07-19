@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { ScrollView, TouchableOpacity, View } from 'react-native'
+import { ScrollView, View } from 'react-native'
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 
 import Text from '@/components/common/Text'
 import { useMyList } from '@/store/list/hook'

@@ -101,7 +101,7 @@ export default () => {
 
   return (
     <ScrollView style={styles.scrollView} keyboardShouldPersistTaps={'always'}>
-      <View onStartShouldSetResponder={() => true}>
+      <View>
         {
           userApiList.length
             ? userApiList.map((item) => {

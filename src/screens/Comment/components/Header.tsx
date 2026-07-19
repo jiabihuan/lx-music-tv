@@ -1,5 +1,6 @@
 import { memo } from 'react'
-import { View, TouchableOpacity } from 'react-native'
+import { View } from 'react-native'
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 
 import { Icon } from '@/components/common/Icon'
 import { pop } from '@/navigation'

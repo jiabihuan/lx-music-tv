@@ -1,5 +1,6 @@
 import { memo, useCallback, useEffect, useRef } from 'react'
-import { View, TouchableOpacity } from 'react-native'
+import { View } from 'react-native'
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import Text from '@/components/common/Text'
 import { Icon } from '@/components/common/Icon'
 import { createStyle } from '@/utils/tools'

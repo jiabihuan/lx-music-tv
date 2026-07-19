@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { TouchableOpacity, View } from 'react-native'
+import { View } from 'react-native'
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import Image, { getSize } from '@/components/common/Image'
 import { createStyle } from '@/utils/tools'
 import Text from '@/components/common/Text'

@@ -1,4 +1,5 @@
-import { View, TouchableOpacity } from 'react-native'
+import { View } from 'react-native'
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 // import Button from '@/components/common/Button'
 // import { navigations } from '@/navigation'
 // import { BorderWidths } from '@/theme'

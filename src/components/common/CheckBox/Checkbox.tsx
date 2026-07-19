@@ -4,8 +4,8 @@ import {
   type GestureResponderEvent,
   StyleSheet,
   View,
-  Pressable,
 } from 'react-native'
+import { FocusablePressable as Pressable } from '@/components/tv/FocusablePressable'
 
 import { Icon } from '../Icon'
 import { createStyle } from '@/utils/tools'

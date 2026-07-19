@@ -1,6 +1,7 @@
 import { memo, useCallback, useRef } from 'react'
 
-import { TouchableOpacity, View } from 'react-native'
+import { View } from 'react-native'
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import { useTheme } from '@/store/theme/hook'
 import Text from '@/components/common/Text'
 import { createStyle } from '@/utils/tools'

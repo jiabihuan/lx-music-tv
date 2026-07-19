@@ -1,5 +1,6 @@
 import { memo, useMemo, useEffect, useRef, useState, useCallback } from 'react'
-import { View, TouchableOpacity } from 'react-native'
+import { View } from 'react-native'
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import PagerView, { type PagerViewOnPageSelectedEvent } from 'react-native-pager-view'
 import Header from './components/Header'
 import { Icon } from '@/components/common/Icon'

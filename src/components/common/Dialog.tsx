@@ -1,5 +1,6 @@
 import { useImperativeHandle, forwardRef, useMemo, useRef } from 'react'
-import { View, TouchableHighlight } from 'react-native'
+import { View } from 'react-native'
+import { FocusableTouchableOpacity as TouchableHighlight } from '@/components/tv/FocusableTouchableOpacity'
 
 import Modal, { type ModalType } from './Modal'
 import { Icon } from '@/components/common/Icon'
@@ -91,7 +92,7 @@ export default forwardRef<DialogType, DialogProps>(({
 
   const closeBtnComponent = useMemo(() => {
     return closeBtn
-      ? <TouchableHighlight style={{ ...styles.closeBtn, width: scaleSizeH(HEADER_HEIGHT) }} underlayColor={theme['c-primary-dark-200-alpha-600']} onPress={() => modalRef.current?.setVisible(false)}>
+      ? <TouchableHighlight style={{ ...styles.closeBtn, width: scaleSizeH(HEADER_HEIGHT) }} underlayColor={theme['c-primary-dark-200-alpha-600']} hasTVPreferredFocus onPress={() => modalRef.current?.setVisible(false)}>
           <Icon name="close" color={theme['c-primary-dark-500-alpha-500']} size={10} />
         </TouchableHighlight>
       : null

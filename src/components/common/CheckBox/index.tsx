@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { View, TouchableOpacity } from 'react-native'
+import { View } from 'react-native'
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import CheckBox from './Checkbox'
 
 import { createStyle, tipDialog } from '@/utils/tools'

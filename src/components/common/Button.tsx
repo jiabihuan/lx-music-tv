@@ -11,6 +11,8 @@ export interface BtnProps extends PressableProps {
   onChangeText?: (value: string) => void
   onClearText?: () => void
   children: React.ReactNode
+  /** TV: 弹窗打开时自动获取焦点 */
+  hasTVPreferredFocus?: boolean
 }
 
 

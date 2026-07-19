@@ -1,5 +1,6 @@
 import { memo } from 'react'
-import { ScrollView, TouchableOpacity, View } from 'react-native'
+import { ScrollView, View } from 'react-native'
+import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import { useI18n } from '@/lang'
 import { useNavActiveId, useStatusbarHeight } from '@/store/common/hook'
 import { useTheme } from '@/store/theme/hook'
