@@ -546,11 +546,22 @@ public class SearchApiManager {
     }
 
     /**
-     * 解码JSON字符串中的Unicode转义（\uXXXX）
+     * 解码JSON字符串中的Unicode转义（backslash-u-XXXX 形式）
      */
     private static String unescapeJson(String s) {
         if (s == null || s.isEmpty()) return s;
-        if (!s.contains("\\u")) return s;
+        // 检测是否包含 Unicode 转义前缀（反斜杠+u）
+        char backslash = 0x5C;
+        char uChar = 0x75;
+        if (s.indexOf(backslash) < 0) return s;
+        boolean hasUnicodeEscape = false;
+        for (int i = 0; i < s.length() - 1; i++) {
+            if (s.charAt(i) == backslash && s.charAt(i + 1) == uChar) {
+                hasUnicodeEscape = true;
+                break;
+            }
+        }
+        if (!hasUnicodeEscape) return s;
         try {
             // 利用JSON解析来解码Unicode转义
             return new JSONObject().put("v", s).optString("v");

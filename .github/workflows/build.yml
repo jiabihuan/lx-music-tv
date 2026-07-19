@@ -28,15 +28,7 @@ jobs:
           gradle-version: '8.7'
 
       - name: Build Debug APK
-        run: |
-          gradle assembleDebug --no-daemon --stacktrace 2>&1 | tee build-output.txt
-          if [ $? -ne 0 ]; then
-            echo "## Build Failed - Error Log" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            grep -A 5 -i "error\|FAILURE\|What went wrong" build-output.txt | head -100 >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            exit 1
-          fi
+        run: gradle assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
