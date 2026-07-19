@@ -1,0 +1,8 @@
+<resources>
+    <style name="Theme.LxMusicTV" parent="Theme.DeviceDefault.NoActionBar">
+        <item name="android:windowBackground">@color/lx_bg</item>
+        <item name="android:colorBackground">@color/lx_bg</item>
+        <item name="android:textColorPrimary">@color/lx_text_primary</item>
+        <item name="android:textColorSecondary">@color/lx_text_secondary</item>
+    </style>
+</resources>

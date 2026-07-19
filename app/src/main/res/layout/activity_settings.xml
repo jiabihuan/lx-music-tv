@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 设置界面布局：音源管理 + 音质选择 + 播放设置 + 关于 -->
+<!-- 所有控件支持遥控器D-pad焦点导航 -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FF1A1A1A"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <!-- 标题栏 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="24dp">
+
+            <Button
+                android:id="@+id/btn_back"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="返回"
+                android:textSize="16sp"
+                android:padding="12dp"
+                android:background="@drawable/focus_background"
+                android:focusable="true"
+                android:focusableInTouchMode="true" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="设置"
+                android:textColor="#FFFFFF"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+            <View
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="64dp" />
+        </LinearLayout>
+
+        <!-- 音源管理 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="音源管理"
+            android:textColor="#FFFFC107"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:id="@+id/tv_scripts_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="已导入音源 (0)"
+            android:textColor="#CCFFFFFF"
+            android:textSize="14sp"
+            android:layout_marginBottom="8dp" />
+
+        <!-- 音源列表 -->
+        <ListView
+            android:id="@+id/lv_scripts"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="120dp"
+            android:background="#FF212121"
+            android:padding="8dp"
+            android:divider="#33FFFFFF"
+            android:dividerHeight="1dp" />
+
+        <!-- 导入按钮 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="24dp">
+
+            <Button
+                android:id="@+id/btn_import_file"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="从文件导入"
+                android:textSize="16sp"
+                android:padding="12dp"
+                android:background="@drawable/focus_background"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:layout_marginEnd="8dp" />
+
+            <Button
+                android:id="@+id/btn_import_url"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="从URL导入"
+                android:textSize="16sp"
+                android:padding="12dp"
+                android:background="@drawable/focus_background"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:layout_marginStart="8dp" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#33FFFFFF"
+            android:layout_marginBottom="24dp" />
+
+        <!-- 音质选择 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="音质选择"
+            android:textColor="#FFFFC107"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp" />
+
+        <RadioGroup
+            android:id="@+id/rg_quality"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="24dp">
+
+            <RadioButton
+                android:id="@+id/rb_128k"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="标准音质 (128k)"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:padding="12dp"
+                android:buttonTint="#FFC107"
+                android:background="@drawable/focus_background"
+                android:focusable="true"
+                android:focusableInTouchMode="true" />
+
+            <RadioButton
+                android:id="@+id/rb_320k"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="高品音质 (320k)"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:padding="12dp"
+                android:buttonTint="#FFC107"
+                android:background="@drawable/focus_background"
+                android:focusable="true"
+                android:focusableInTouchMode="true" />
+
+            <RadioButton
+                android:id="@+id/rb_flac"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="无损音质 (FLAC)"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:padding="12dp"
+                android:buttonTint="#FFC107"
+                android:background="@drawable/focus_background"
+                android:focusable="true"
+                android:focusableInTouchMode="true" />
+        </RadioGroup>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#33FFFFFF"
+            android:layout_marginBottom="24dp" />
+
+        <!-- 播放设置 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="播放设置"
+            android:textColor="#FFFFC107"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:padding="12dp"
+            android:background="@drawable/focus_background"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:layout_marginBottom="24dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="自动播放下一首"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <Switch
+                android:id="@+id/sw_auto_next"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:focusable="true"
+                android:focusableInTouchMode="true" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#33FFFFFF"
+            android:layout_marginBottom="24dp" />
+
+        <!-- 循环模式 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="循环模式"
+            android:textColor="#FFFFC107"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp" />
+
+        <RadioGroup
+            android:id="@+id/rg_play_mode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="24dp">
+
+            <RadioButton
+                android:id="@+id/rb_sequence"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="顺序播放"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:padding="12dp"
+                android:buttonTint="#FFC107"
+                android:background="@drawable/focus_background"
+                android:focusable="true"
+                android:focusableInTouchMode="true" />
+
+            <RadioButton
+                android:id="@+id/rb_repeat_all"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="列表循环"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:padding="12dp"
+                android:buttonTint="#FFC107"
+                android:background="@drawable/focus_background"
+                android:focusable="true"
+                android:focusableInTouchMode="true" />
+
+            <RadioButton
+                android:id="@+id/rb_repeat_one"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="单曲循环"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:padding="12dp"
+                android:buttonTint="#FFC107"
+                android:background="@drawable/focus_background"
+                android:focusable="true"
+                android:focusableInTouchMode="true" />
+
+            <RadioButton
+                android:id="@+id/rb_shuffle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="随机播放"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:padding="12dp"
+                android:buttonTint="#FFC107"
+                android:background="@drawable/focus_background"
+                android:focusable="true"
+                android:focusableInTouchMode="true" />
+        </RadioGroup>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#33FFFFFF"
+            android:layout_marginBottom="24dp" />
+
+        <!-- 关于 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="关于"
+            android:textColor="#FFFFC107"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:id="@+id/tv_about"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#CCFFFFFF"
+            android:textSize="14sp"
+            android:lineSpacingExtra="4dp"
+            android:padding="12dp"
+            android:background="#FF212121" />
+
+    </LinearLayout>
+</ScrollView>

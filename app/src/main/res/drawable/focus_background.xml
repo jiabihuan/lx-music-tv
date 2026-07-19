@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 焦点高亮背景：默认透明，聚焦时显示金色边框+半透明背景，按下时加深 -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 聚焦状态：金色边框 + 半透明深色背景 -->
+    <item android:state_focused="true">
+        <shape android:shape="rectangle">
+            <solid android:color="#33FFC107" />
+            <stroke android:width="2dp" android:color="#FFFFC107" />
+            <corners android:radius="4dp" />
+        </shape>
+    </item>
+    <!-- 按下状态：稍深的高亮 -->
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <solid android:color="#55FFC107" />
+            <stroke android:width="2dp" android:color="#FFFFC107" />
+            <corners android:radius="4dp" />
+        </shape>
+    </item>
+    <!-- 选中状态：边框高亮 -->
+    <item android:state_selected="true">
+        <shape android:shape="rectangle">
+            <solid android:color="#22FFC107" />
+            <stroke android:width="1dp" android:color="#AAFFC107" />
+            <corners android:radius="4dp" />
+        </shape>
+    </item>
+    <!-- 默认状态：透明 -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@android:color/transparent" />
+            <corners android:radius="4dp" />
+        </shape>
+    </item>
+</selector>
