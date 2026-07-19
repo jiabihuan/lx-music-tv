@@ -195,6 +195,9 @@ public class MainActivity extends NavigationActivity {
                     }
                 }, delay);
             }
+            // 同时转发到 JS 侧，让 Menu 等组件可以自行处理焦点高亮
+            // （不消费事件，系统焦点导航仍正常工作）
+            sendKeyToJS(keyCode, event);
         }
 
         // 其他按键走默认处理（D-pad 焦点导航由 RN 自动处理）
