@@ -28,10 +28,18 @@ jobs:
           gradle-version: '8.7'
 
       - name: Build Debug APK
-        run: gradle assembleDebug --no-daemon --stacktrace
+        run: gradle assembleDebug --no-daemon --stacktrace 2>&1 | tee build-output.txt
+
+      - name: Upload Build Log on Failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-error-log
+          path: build-output.txt
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
+        if: success()
         with:
           name: lx-music-tv-debug-apk
           path: app/build/outputs/apk/debug/*.apk
