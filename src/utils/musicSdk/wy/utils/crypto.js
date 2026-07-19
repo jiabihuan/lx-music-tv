@@ -1,7 +1,7 @@
 // https://github.com/Binaryify/NeteaseCloudMusicApi/blob/master/util/crypto.js
-import { btoa } from 'react-native-quick-base64'
 import { aesEncryptSync, aesDecryptSync, rsaEncryptSync, AES_MODE, RSA_PADDING } from '@/utils/nativeModules/crypto'
 import { toMD5 } from '../../utils'
+const btoa = (str) => Buffer.from(str, 'binary').toString('base64')
 const iv = btoa('0102030405060708')
 const presetKey = btoa('0CoJUm6Qyw8W8jud')
 const linuxapiKey = btoa('rFgB&h#%2?^eDg:Q')
