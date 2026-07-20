@@ -1,48 +1,77 @@
-import { memo, useMemo, useEffect, useRef, useCallback, useState } from 'react'
-import { View, FlatList, Animated, Easing, type FlatListProps, type LayoutChangeEvent, type NativeSyntheticEvent, type NativeScrollEvent } from 'react-native'
-import {
-  type Line,
-  useLrcPlay,
-  useLrcSet,
-  useLxLyricPlay,
-  useLxLyricLines,
-  type LxLyricLine,
-  type LxLyricProgress,
-} from '@/plugins/lyric'
+import { memo, useMemo, useEffect, useRef, useCallback } from 'react'
+import { View, FlatList, type FlatListProps, type LayoutChangeEvent, type NativeSyntheticEvent, type NativeScrollEvent } from 'react-native'
+// import { useLayout } from '@/utils/hooks'
+import { type Line, useLrcPlay, useLrcSet } from '@/plugins/lyric'
 import { createStyle } from '@/utils/tools'
+// import { useComponentIds } from '@/store/common/hook'
 import { useTheme } from '@/store/theme/hook'
 import { useSettingValue } from '@/store/setting/hook'
 import { AnimatedColorText } from '@/components/common/Text'
-import Text from '@/components/common/Text'
 import { setSpText } from '@/utils/pixelRatio'
 import playerState from '@/store/player/state'
 import { scrollTo } from '@/utils/scroll'
 import PlayLine, { type PlayLineType } from '../components/PlayLine'
+// import { screenkeepAwake } from '@/utils/nativeModules/utils'
+// import { log } from '@/utils/log'
+// import { toast } from '@/utils/tools'
 
 type FlatListType = FlatListProps<Line>
+
+// const useLock = () => {
+//   const showCommentRef = useRef(false)
+
+
+//   useEffect(() => {
+//     let appstateListener = AppState.addEventListener('change', (state) => {
+//       switch (state) {
+//         case 'active':
+//           if (showLyricRef.current && !showCommentRef.current) screenkeepAwake()
+//           break
+//         case 'background':
+//           screenUnkeepAwake()
+//           break
+//       }
+//     })
+//     return () => {
+//       appstateListener.remove()
+//     }
+//   }, [])
+//   useEffect(() => {
+//     let listener: ReturnType<typeof onNavigationComponentDidDisappearEvent>
+//     showCommentRef.current = !!componentIds.comment
+//     if (showCommentRef.current) {
+//       if (showLyricRef.current) screenUnkeepAwake()
+//       listener = onNavigationComponentDidDisappearEvent(componentIds.comment as string, () => {
+//         if (showLyricRef.current && AppState.currentState == 'active') screenkeepAwake()
+//       })
+//     }
+
+//     const rm = global.state_event.on('componentIdsUpdated', (ids) => {
+
+//     })
+
+//     return () => {
+//       if (listener) listener.remove()
+//     }
+//   }, [])
+// }
 
 interface LineProps {
   line: Line
   lineNum: number
   activeLine: number
   onLayout: (lineNum: number, height: number, width: number) => void
-  lxLyricLine?: LxLyricLine | null
-  lxProgress?: LxLyricProgress | null
 }
-const LrcLine = memo(({ line, lineNum, activeLine, onLayout, lxLyricLine, lxProgress }: LineProps) => {
+const LrcLine = memo(({ line, lineNum, activeLine, onLayout }: LineProps) => {
   const theme = useTheme()
   const lrcFontSize = useSettingValue('playDetail.vertical.style.lrcFontSize')
   const textAlign = useSettingValue('playDetail.style.align')
   const size = lrcFontSize / 10
   const lineHeight = setSpText(size) * 1.3
-  const [lineWidth, setLineWidth] = useState(0)
-  const progressAnim = useRef(new Animated.Value(0)).current
-  const lastUpdateTimeRef = useRef(0)
-
-  const isActive = activeLine == lineNum
 
   const colors = useMemo(() => {
-    return isActive ? [
+    const active = activeLine == lineNum
+    return active ? [
       theme['c-primary'],
       theme['c-primary-alpha-200'],
       1,
@@ -51,108 +80,22 @@ const LrcLine = memo(({ line, lineNum, activeLine, onLayout, lxLyricLine, lxProg
       theme['c-300'],
       0.6,
     ] as const
-  }, [isActive, theme])
-
-  // 进度变化时用 Animated.timing 平滑过渡
-  // 用实际时间差计算 duration，保证动画速度恒定，避免忽快忽慢掉帧
-  useEffect(() => {
-    if (!isActive || !lxProgress || lxProgress.lineIndex !== lineNum) {
-      progressAnim.setValue(0)
-      lastUpdateTimeRef.current = 0
-      return
-    }
-    const now = Date.now()
-    let duration = 33
-    if (lastUpdateTimeRef.current > 0) {
-      duration = now - lastUpdateTimeRef.current
-      if (duration < 16) duration = 16
-      if (duration > 100) duration = 100
-    }
-    lastUpdateTimeRef.current = now
-    Animated.timing(progressAnim, {
-      toValue: lxProgress.lineProgress,
-      duration,
-      useNativeDriver: false,
-      easing: Easing.linear,
-    }).start()
-  }, [isActive, lxProgress?.lineProgress, lxProgress?.lineIndex, lineNum, progressAnim])
+  }, [activeLine, lineNum, theme])
 
   const handleLayout = ({ nativeEvent }: LayoutChangeEvent) => {
     onLayout(lineNum, nativeEvent.layout.height, nativeEvent.layout.width)
   }
 
-  const handleTextLayout = ({ nativeEvent }: LayoutChangeEvent) => {
-    if (nativeEvent.layout.width > lineWidth) {
-      setLineWidth(nativeEvent.layout.width)
-    }
-  }
 
-  // 判断是否启用卡拉OK逐字效果：当前行激活 + 有逐字歌词数据 + 逐字进度匹配当前行
-  const enableKaraoke = isActive && lxLyricLine && lxLyricLine.words.length > 1
-    && lxProgress && lxProgress.lineIndex === lineNum
-
-  // 卡拉OK效果：底层灰色整行 + 顶层主题色整行（Animated 宽度裁剪，平滑过渡）
-  const renderKaraokeLine = () => {
-    if (!lxProgress) return null
-
-    return (
-      <View style={{ position: 'relative', alignSelf: textAlign === 'center' ? 'center' : (textAlign === 'right' ? 'flex-end' : 'flex-start') }}>
-        {/* 底层：灰色文本 */}
-        <Text
-          size={size}
-          color={theme['c-300']}
-          style={{
-            lineHeight,
-            opacity: isActive ? 1 : colors[2],
-          }}
-          textBreakStrategy="simple"
-          onLayout={handleTextLayout}
-        >
-          {line.text}
-        </Text>
-        {/* 顶层：主题色文本，用 Animated 宽度裁剪实现平滑卡拉OK效果 */}
-        {lineWidth > 0 && (
-          <Animated.View
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: progressAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0, lineWidth],
-              }),
-              height: '100%',
-              overflow: 'hidden',
-            }}
-          >
-            <Text
-              size={size}
-              color={colors[0]}
-              style={{
-                lineHeight,
-                opacity: isActive ? 1 : colors[2],
-              }}
-              textBreakStrategy="simple"
-            >
-              {line.text}
-            </Text>
-          </Animated.View>
-        )}
-      </View>
-    )
-  }
-
+  // textBreakStrategy="simple" 用于解决某些设备上字体被截断的问题
+  // https://stackoverflow.com/a/72822360
   return (
     <View style={styles.line} onLayout={handleLayout}>
-      {enableKaraoke ? (
-        renderKaraokeLine()
-      ) : (
-        <AnimatedColorText style={{
-          ...styles.lineText,
-          textAlign,
-          lineHeight,
-        }} textBreakStrategy="simple" color={colors[0]} opacity={colors[2]} size={size}>{line.text}</AnimatedColorText>
-      )}
+      <AnimatedColorText style={{
+        ...styles.lineText,
+        textAlign,
+        lineHeight,
+      }} textBreakStrategy="simple" color={colors[0]} opacity={colors[2]} size={size}>{line.text}</AnimatedColorText>
       {
         line.extendedLyrics.map((lrc, index) => {
           return (<AnimatedColorText style={{
@@ -165,28 +108,15 @@ const LrcLine = memo(({ line, lineNum, activeLine, onLayout, lxLyricLine, lxProg
     </View>
   )
 }, (prevProps, nextProps) => {
-  if (prevProps.line !== nextProps.line) return false
-  if (prevProps.activeLine !== nextProps.activeLine
-    && (nextProps.activeLine === nextProps.lineNum || prevProps.activeLine === prevProps.lineNum)) {
-    return false
-  }
-  // 激活行且逐字进度变化时更新（Animated.timing 内部平滑过渡）
-  if (prevProps.activeLine === prevProps.lineNum && nextProps.activeLine === nextProps.lineNum) {
-    const prevProgress = prevProps.lxProgress
-    const nextProgress = nextProps.lxProgress
-    if (prevProgress?.lineProgress !== nextProgress?.lineProgress) {
-      return false
-    }
-  }
-  return true
+  return prevProps.line === nextProps.line &&
+    prevProps.activeLine != nextProps.lineNum &&
+    nextProps.activeLine != nextProps.lineNum
 })
 const wait = async() => new Promise(resolve => setTimeout(resolve, 100))
 
 export default () => {
   const lyricLines = useLrcSet()
   const { line } = useLrcPlay()
-  const lxLyricLines = useLxLyricLines()
-  const lxProgress = useLxLyricPlay()
   const flatListRef = useRef<FlatList>(null)
   const playLineRef = useRef<PlayLineType>(null)
   const isPauseScrollRef = useRef(true)
@@ -198,10 +128,23 @@ export default () => {
   const listLayoutInfoRef = useRef<{ spaceHeight: number, lineHeights: number[] }>({ spaceHeight: 0, lineHeights: [] })
   const scrollCancelRef = useRef<(() => void) | null>(null)
   const isShowLyricProgressSetting = useSettingValue('playDetail.isShowLyricProgressSetting')
+  // useLock()
+  // const [imgUrl, setImgUrl] = useState(null)
+  // const theme = useGetter('common', 'theme')
+  // const { onLayout, ...layout } = useLayout()
 
+  // useEffect(() => {
+  //   const url = playMusicInfo ? playMusicInfo.musicInfo.img : null
+  //   if (imgUrl == url) return
+  //   setImgUrl(url)
+  // // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [playMusicInfo])
+
+  // const imgWidth = useMemo(() => layout.width * 0.75, [layout.width])
   const handleScrollToActive = (index = lineRef.current.line) => {
     if (index < 0) return
     if (flatListRef.current) {
+      // console.log('handleScrollToActive', index)
       if (scrollInfoRef.current && lineRef.current.line - lineRef.current.prevLine == 1) {
         let offset = listLayoutInfoRef.current.spaceHeight
         for (let line = 0; line < index; line++) {
@@ -279,6 +222,7 @@ export default () => {
   }, [])
 
   useEffect(() => {
+    // linesRef.current = lyricLines
     listLayoutInfoRef.current.lineHeights = []
     lineRef.current.prevLine = 0
     lineRef.current.line = 0
@@ -355,14 +299,7 @@ export default () => {
 
   const renderItem: FlatListType['renderItem'] = ({ item, index }) => {
     return (
-      <LrcLine
-        line={item}
-        lineNum={index}
-        activeLine={line}
-        onLayout={handleLineLayout}
-        lxLyricLine={lxLyricLines[index] || null}
-        lxProgress={lxProgress}
-      />
+      <LrcLine line={item} lineNum={index} activeLine={line} onLayout={handleLineLayout} />
     )
   }
   const getkey: FlatListType['keyExtractor'] = (item, index) => `${index}${item.text}`
@@ -388,7 +325,6 @@ export default () => {
         initialNumToRender={Math.max(line + 10, 10)}
         onScrollToIndexFailed={handleScrollToIndexFailed}
         onScroll={handleScroll}
-        extraData={lxProgress}
       />
       { isShowLyricProgressSetting ? <PlayLine ref={playLineRef} onPlayLine={handlePlayLine} /> : null }
     </>
@@ -400,6 +336,7 @@ const styles = createStyle({
     flex: 1,
     paddingLeft: 20,
     paddingRight: 20,
+    // backgroundColor: 'rgba(0,0,0,0.1)',
   },
   space: {
     paddingTop: '100%',
@@ -407,12 +344,21 @@ const styles = createStyle({
   line: {
     paddingTop: 10,
     paddingBottom: 10,
+    // opacity: 0,
   },
   lineText: {
     textAlign: 'center',
+    // fontSize: 16,
+    // lineHeight: 20,
+    // paddingTop: 5,
+    // paddingBottom: 5,
+    // opacity: 0,
   },
   lineTranslationText: {
     textAlign: 'center',
+    // fontSize: 13,
+    // lineHeight: 17,
     paddingTop: 5,
+    // paddingBottom: 5,
   },
 })
