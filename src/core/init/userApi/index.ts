@@ -1,5 +1,6 @@
 import { type InitParams, onScriptAction, sendAction, type ResponseParams, type UpdateInfoParams, type RequestParams } from '@/utils/nativeModules/userApi'
 import { log, setUserApiList, setUserApiStatus, importUserApi } from '@/core/userApi'
+import { state as userApiState } from '@/store/userApi'
 import settingState from '@/store/setting/state'
 import BackgroundTimer from 'react-native-background-timer'
 import { fetchData } from './request'
@@ -258,7 +259,7 @@ export default async(setting: LX.AppSetting) => {
   // 自动加载内置自定义源脚本（assets/script/ 目录下除 user-api-preload.js 外的 .js 文件）
   try {
     const files = await RNFS.readDirAssets('script')
-    const existingNames = new Set(state.list.map(s => s.name))
+    const existingNames = new Set(userApiState.list.map(s => s.name))
     for (const file of files) {
       if (file.name === 'user-api-preload.js') continue
       if (!file.name.endsWith('.js')) continue
