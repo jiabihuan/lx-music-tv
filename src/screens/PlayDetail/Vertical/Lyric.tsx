@@ -1,5 +1,5 @@
 import { memo, useMemo, useEffect, useRef, useCallback, useState } from 'react'
-import { View, FlatList, type FlatListProps, type LayoutChangeEvent, type NativeSyntheticEvent, type NativeScrollEvent } from 'react-native'
+import { View, FlatList, Animated, Easing, type FlatListProps, type LayoutChangeEvent, type NativeSyntheticEvent, type NativeScrollEvent } from 'react-native'
 import {
   type Line,
   useLrcPlay,
@@ -36,6 +36,7 @@ const LrcLine = memo(({ line, lineNum, activeLine, onLayout, lxLyricLine, lxProg
   const size = lrcFontSize / 10
   const lineHeight = setSpText(size) * 1.3
   const [lineWidth, setLineWidth] = useState(0)
+  const progressAnim = useRef(new Animated.Value(0)).current
 
   const isActive = activeLine == lineNum
 
@@ -51,6 +52,20 @@ const LrcLine = memo(({ line, lineNum, activeLine, onLayout, lxLyricLine, lxProg
     ] as const
   }, [isActive, theme])
 
+  // 进度变化时用 Animated.timing 平滑过渡（33ms 内完成，配合 33ms 计算频率实现 60fps 丝滑效果）
+  useEffect(() => {
+    if (!isActive || !lxProgress || lxProgress.lineIndex !== lineNum) {
+      progressAnim.setValue(0)
+      return
+    }
+    Animated.timing(progressAnim, {
+      toValue: lxProgress.lineProgress,
+      duration: 33,
+      useNativeDriver: false,
+      easing: Easing.linear,
+    }).start()
+  }, [isActive, lxProgress?.lineProgress, lxProgress?.lineIndex, lineNum, progressAnim])
+
   const handleLayout = ({ nativeEvent }: LayoutChangeEvent) => {
     onLayout(lineNum, nativeEvent.layout.height, nativeEvent.layout.width)
   }
@@ -65,10 +80,9 @@ const LrcLine = memo(({ line, lineNum, activeLine, onLayout, lxLyricLine, lxProg
   const enableKaraoke = isActive && lxLyricLine && lxLyricLine.words.length > 1
     && lxProgress && lxProgress.lineIndex === lineNum
 
-  // 卡拉OK效果：底层灰色整行 + 顶层主题色整行（宽度裁剪）
+  // 卡拉OK效果：底层灰色整行 + 顶层主题色整行（Animated 宽度裁剪，平滑过渡）
   const renderKaraokeLine = () => {
     if (!lxProgress) return null
-    const progress = lxProgress.lineProgress
 
     return (
       <View style={{ position: 'relative', alignSelf: textAlign === 'center' ? 'center' : (textAlign === 'right' ? 'flex-end' : 'flex-start') }}>
@@ -85,14 +99,17 @@ const LrcLine = memo(({ line, lineNum, activeLine, onLayout, lxLyricLine, lxProg
         >
           {line.text}
         </Text>
-        {/* 顶层：主题色文本，用 overflow:hidden 裁剪宽度 */}
+        {/* 顶层：主题色文本，用 Animated 宽度裁剪实现平滑卡拉OK效果 */}
         {lineWidth > 0 && (
-          <View
+          <Animated.View
             style={{
               position: 'absolute',
               top: 0,
               left: 0,
-              width: lineWidth * progress,
+              width: progressAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, lineWidth],
+              }),
               height: '100%',
               overflow: 'hidden',
             }}
@@ -108,7 +125,7 @@ const LrcLine = memo(({ line, lineNum, activeLine, onLayout, lxLyricLine, lxProg
             >
               {line.text}
             </Text>
-          </View>
+          </Animated.View>
         )}
       </View>
     )
@@ -142,7 +159,7 @@ const LrcLine = memo(({ line, lineNum, activeLine, onLayout, lxLyricLine, lxProg
     && (nextProps.activeLine === nextProps.lineNum || prevProps.activeLine === prevProps.lineNum)) {
     return false
   }
-  // 激活行且逐字进度变化时更新（通知频率已降为 50ms 一次）
+  // 激活行且逐字进度变化时更新（Animated.timing 内部平滑过渡）
   if (prevProps.activeLine === prevProps.lineNum && nextProps.activeLine === nextProps.lineNum) {
     const prevProgress = prevProps.lxProgress
     const nextProgress = nextProps.lxProgress

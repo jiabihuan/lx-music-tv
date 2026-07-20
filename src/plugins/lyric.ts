@@ -269,8 +269,8 @@ const lrcTools = {
       const currentTime = this.lxLyricStartProgress + elapsed
       const progress = this.calcLxLyricProgress(currentTime)
       this.lxLyricProgress = progress
-      // 降低通知频率到每 50ms 一次，减少 setState 次数，避免旧设备卡顿
-      if (elapsed - this.lxLyricLastNotifyTime >= 50) {
+      // 通知频率 33ms（约 30fps），配合 Animated.timing 的 33ms 过渡实现 60fps 丝滑效果
+      if (elapsed - this.lxLyricLastNotifyTime >= 33) {
         this.lxLyricLastNotifyTime = elapsed
         for (const hook of this.lxLyricPlayHooks) hook(progress)
       }
