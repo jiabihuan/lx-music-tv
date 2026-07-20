@@ -1,17 +1,18 @@
-import { useImperativeHandle, forwardRef, useState, useEffect, useMemo } from 'react'
+import { useImperativeHandle, forwardRef, useState, useEffect, useMemo, useRef } from 'react'
 import { View, TouchableWithoutFeedback, BackHandler, StyleSheet } from 'react-native'
 import { useStatusbarHeight } from '@/store/common/hook'
+import { usePortal } from './Portal'
 
 /**
- * Overlay 组件：用绝对定位的 View 替代原生 Modal
+ * Overlay 组件：用 Portal + 绝对定位 View 替代原生 Modal
  *
- * 为什么需要 Overlay？
- * React Native 的 Modal 在 Android 上会创建独立的 Window（Dialog），
- * 导致 D-pad 遥控器焦点导航失效（无法用方向键移动到弹窗内的菜单项）。
- * 改用绝对定位的 View 后，弹窗内容仍处于主 Activity 的 Window 中，
- * D-pad 焦点导航可正常工作。
- *
- * 注意：父容器需要是全屏布局（flex: 1），否则 Overlay 只会覆盖父容器范围。
+ * 为什么需要 Overlay + Portal？
+ * 1. React Native 的 Modal 在 Android 上会创建独立的 Window（Dialog），
+ *    导致 D-pad 遥控器焦点导航失效（无法用方向键移动到弹窗内的菜单项）。
+ * 2. 直接用 absoluteFill 的 View 作为 Overlay，如果父组件不是全屏，
+ *    Overlay 也不会是全屏的，导致子组件的绝对定位坐标错误。
+ * 3. 使用 Portal 把 Overlay 内容渲染到 Screen 根层级的 PortalHost 中，
+ *    确保 Overlay 是真正全屏的，子组件的屏幕坐标计算正确。
  */
 export interface OverlayProps {
   onHide?: () => void
@@ -42,6 +43,8 @@ export default forwardRef<OverlayType, OverlayProps>(({
 }: OverlayProps, ref) => {
   const [visible, setVisible] = useState(false)
   const statusBarHeight = useStatusbarHeight()
+  const { addPortal, removePortal, updatePortal } = usePortal()
+  const portalIdRef = useRef<number | null>(null)
 
   const handleBgClose = () => {
     if (bgHide) {
@@ -74,16 +77,39 @@ export default forwardRef<OverlayType, OverlayProps>(({
 
   const memoChildren = useMemo(() => children, [children])
 
-  if (!visible) return null
+  // Portal 渲染
+  useEffect(() => {
+    if (!visible) {
+      if (portalIdRef.current != null) {
+        removePortal(portalIdRef.current)
+        portalIdRef.current = null
+      }
+      return
+    }
 
-  return (
-    <View style={[StyleSheet.absoluteFill, { zIndex, elevation: zIndex, backgroundColor: bgColor }]}>
-      {/* 背景点击层：独立一层，不影响 children 的绝对定位参照物 */}
-      <TouchableWithoutFeedback onPress={handleBgClose}>
-        <View style={{ flex: 1, paddingTop: statusBarPadding ? statusBarHeight : 0 }} />
-      </TouchableWithoutFeedback>
-      {/* 内容层：直接放在全屏 View 内，绝对定位参照物是屏幕 */}
-      {memoChildren}
-    </View>
-  )
+    const portalContent = (
+      <View style={[StyleSheet.absoluteFill, { zIndex, elevation: zIndex, backgroundColor: bgColor }]}>
+        <TouchableWithoutFeedback onPress={handleBgClose}>
+          <View style={{ flex: 1, paddingTop: statusBarPadding ? statusBarHeight : 0 }} />
+        </TouchableWithoutFeedback>
+        {memoChildren}
+      </View>
+    )
+
+    if (portalIdRef.current == null) {
+      portalIdRef.current = addPortal(portalContent)
+    } else {
+      updatePortal(portalIdRef.current, portalContent)
+    }
+  }, [visible, memoChildren, bgColor, zIndex, statusBarHeight, statusBarPadding, addPortal, removePortal, updatePortal])
+
+  useEffect(() => {
+    return () => {
+      if (portalIdRef.current != null) {
+        removePortal(portalIdRef.current)
+      }
+    }
+  }, [removePortal])
+
+  return null
 })

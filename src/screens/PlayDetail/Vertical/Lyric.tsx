@@ -1,4 +1,4 @@
-import { memo, useMemo, useEffect, useRef, useCallback } from 'react'
+import { memo, useMemo, useEffect, useRef, useCallback, useState } from 'react'
 import { View, FlatList, type FlatListProps, type LayoutChangeEvent, type NativeSyntheticEvent, type NativeScrollEvent } from 'react-native'
 import {
   type Line,
@@ -35,6 +35,7 @@ const LrcLine = memo(({ line, lineNum, activeLine, onLayout, lxLyricLine, lxProg
   const textAlign = useSettingValue('playDetail.style.align')
   const size = lrcFontSize / 10
   const lineHeight = setSpText(size) * 1.3
+  const [lineWidth, setLineWidth] = useState(0)
 
   const isActive = activeLine == lineNum
 
@@ -54,48 +55,69 @@ const LrcLine = memo(({ line, lineNum, activeLine, onLayout, lxLyricLine, lxProg
     onLayout(lineNum, nativeEvent.layout.height, nativeEvent.layout.width)
   }
 
-  // 判断是否启用逐字显示
-  const enableWordByWord = isActive && lxLyricLine && lxLyricLine.words.length > 1
+  const handleTextLayout = ({ nativeEvent }: LayoutChangeEvent) => {
+    if (nativeEvent.layout.width > lineWidth) {
+      setLineWidth(nativeEvent.layout.width)
+    }
+  }
+
+  // 判断是否启用卡拉OK逐字效果：当前行激活 + 有逐字歌词数据 + 逐字进度匹配当前行
+  const enableKaraoke = isActive && lxLyricLine && lxLyricLine.words.length > 1
     && lxProgress && lxProgress.lineIndex === lineNum
 
-  // 逐字显示模式：渲染单个字
-  const renderWords = () => {
-    if (!lxLyricLine || !lxProgress) return null
-    const { words } = lxLyricLine
-    const { wordIndex } = lxProgress
+  // 卡拉OK效果：底层灰色整行 + 顶层主题色整行（宽度裁剪）
+  const renderKaraokeLine = () => {
+    if (!lxProgress) return null
+    const progress = lxProgress.lineProgress
 
     return (
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: textAlign === 'center' ? 'center' : (textAlign === 'right' ? 'flex-end' : 'flex-start') }}>
-        {words.map((word, idx) => {
-          const isSung = idx < wordIndex
-          const isCurrent = idx === wordIndex
-          const color = isSung || isCurrent
-            ? colors[0]
-            : theme['c-300']
-
-          return (
+      <View style={{ position: 'relative', alignSelf: textAlign === 'center' ? 'center' : (textAlign === 'right' ? 'flex-end' : 'flex-start') }}>
+        {/* 底层：灰色文本 */}
+        <Text
+          size={size}
+          color={theme['c-300']}
+          style={{
+            lineHeight,
+            opacity: isActive ? 1 : colors[2],
+          }}
+          textBreakStrategy="simple"
+          onLayout={handleTextLayout}
+        >
+          {line.text}
+        </Text>
+        {/* 顶层：主题色文本，用 overflow:hidden 裁剪宽度 */}
+        {lineWidth > 0 && (
+          <View
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: lineWidth * progress,
+              height: '100%',
+              overflow: 'hidden',
+            }}
+          >
             <Text
-              key={idx}
               size={size}
-              color={color}
+              color={colors[0]}
               style={{
                 lineHeight,
                 opacity: isActive ? 1 : colors[2],
               }}
               textBreakStrategy="simple"
             >
-              {word.text}
+              {line.text}
             </Text>
-          )
-        })}
+          </View>
+        )}
       </View>
     )
   }
 
   return (
     <View style={styles.line} onLayout={handleLayout}>
-      {enableWordByWord ? (
-        renderWords()
+      {enableKaraoke ? (
+        renderKaraokeLine()
       ) : (
         <AnimatedColorText style={{
           ...styles.lineText,
@@ -120,10 +142,11 @@ const LrcLine = memo(({ line, lineNum, activeLine, onLayout, lxLyricLine, lxProg
     && (nextProps.activeLine === nextProps.lineNum || prevProps.activeLine === prevProps.lineNum)) {
     return false
   }
+  // 激活行且逐字进度变化时更新（lineProgress 每帧变化，用 floor 降低更新频率）
   if (prevProps.activeLine === prevProps.lineNum && nextProps.activeLine === nextProps.lineNum) {
     const prevProgress = prevProps.lxProgress
     const nextProgress = nextProps.lxProgress
-    if (prevProgress?.wordIndex !== nextProgress?.wordIndex) {
+    if (Math.floor((prevProgress?.lineProgress ?? 0) * 100) !== Math.floor((nextProgress?.lineProgress ?? 0) * 100)) {
       return false
     }
   }

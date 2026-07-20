@@ -37,6 +37,8 @@ export interface LxLyricProgress {
   wordIndex: number
   /** 当前字的播放进度（0~1） */
   wordProgress: number
+  /** 当前行的整体播放进度（0~1），用于卡拉OK效果 */
+  lineProgress: number
 }
 
 const lrcTools = {
@@ -62,6 +64,7 @@ const lrcTools = {
     lineIndex: 0,
     wordIndex: 0,
     wordProgress: 0,
+    lineProgress: 0,
   } as LxLyricProgress,
   lxLyricRafId: null as number | null,
   lxLyricStartTime: 0,
@@ -174,6 +177,7 @@ const lrcTools = {
       lineIndex: 0,
       wordIndex: 0,
       wordProgress: 0,
+      lineProgress: 0,
     }
     // 通知所有 hook
     for (const hook of this.lxLyricPlayHooks) hook(this.lxLyricProgress)
@@ -228,11 +232,24 @@ const lrcTools = {
       }
     }
 
+    // 计算行级进度（用于卡拉OK效果）
+    let lineProgress = 0
+    if (words.length > 0) {
+      const lastWord = words[words.length - 1]
+      const totalDuration = lastWord.offset + lastWord.duration
+      if (totalDuration > 0) {
+        lineProgress = Math.min(Math.max(lineTime / totalDuration, 0), 1)
+      } else {
+        lineProgress = 1
+      }
+    }
+
     return {
       currentTime: time,
       lineIndex,
       wordIndex,
       wordProgress,
+      lineProgress,
     }
   },
 
