@@ -439,6 +439,22 @@ export const getOnlineOtherSourceLyricInfo = async({ musicInfos, onToggleSource,
     if (lyricInfo) return { musicInfo, lyricInfo, isFromCache: true }
   }
 
+  // 优先尝试获取QQ音乐QRC逐字歌词
+  if (musicInfo.source !== 'tx') {
+    try {
+      const qrcLyricInfo: LX.Music.LyricInfo = await (musicSdk.tx.getQrcByKeyword(musicInfo.name, musicInfo.singer) as any).promise
+      if (qrcLyricInfo?.lyric && qrcLyricInfo?.lxlyric && existTimeExp.test(qrcLyricInfo.lyric)) {
+        return {
+          musicInfo,
+          lyricInfo: qrcLyricInfo,
+          isFromCache: false,
+        }
+      }
+    } catch (e) {
+      console.log('Get QRC lyric failed, fallback to original source')
+    }
+  }
+
   let reqPromise
   try {
     // TODO: remove any type
@@ -473,6 +489,22 @@ export const handleGetOnlineLyricInfo = async({ musicInfo, onToggleSource, isRef
   lyricInfo: LX.Music.LyricInfo | LX.Player.LyricInfo
   isFromCache: boolean
 }> => {
+  // 优先尝试获取QQ音乐QRC逐字歌词
+  if (musicInfo.source !== 'tx') {
+    try {
+      const qrcLyricInfo: LX.Music.LyricInfo = await (musicSdk.tx.getQrcByKeyword(musicInfo.name, musicInfo.singer) as any).promise
+      if (qrcLyricInfo?.lyric && qrcLyricInfo?.lxlyric && existTimeExp.test(qrcLyricInfo.lyric)) {
+        return {
+          musicInfo,
+          lyricInfo: qrcLyricInfo,
+          isFromCache: false,
+        }
+      }
+    } catch (e) {
+      console.log('Get QRC lyric failed, fallback to original source')
+    }
+  }
+
   // console.log(musicInfo.source)
   let reqPromise
   try {

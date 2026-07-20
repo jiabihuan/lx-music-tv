@@ -103,4 +103,29 @@ export default {
     }).catch(() => getLyricFallback(songmid).promise)
     return requestObj
   },
+  getQrcByKeyword(name, singer) {
+    const keyword = encodeURIComponent(`${name} ${singer}`)
+    const requestObj = httpFetch(`https://www.oiapi.net/api/QQMusicLyric?keyword=${keyword}&format=qrc&type=json&n=1`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      },
+    })
+    requestObj.promise = requestObj.promise.then(({ body }) => {
+      if (body.code != 1 || !body.data?.content) {
+        return Promise.reject(new Error('Get QRC lyric failed'))
+      }
+      const qrcContent = body.data.content
+      const { lyric, lxlyric } = parseQrc(qrcContent)
+      if (!lyric || !lxlyric) {
+        return Promise.reject(new Error('Parse QRC lyric failed'))
+      }
+      return {
+        lyric: decodeName(lyric),
+        tlyric: '',
+        rlyric: '',
+        lxlyric: decodeName(lxlyric),
+      }
+    })
+    return requestObj
+  },
 }
