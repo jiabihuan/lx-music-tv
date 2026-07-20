@@ -32,8 +32,8 @@ export const init = async() => {
  * @param lyric lyric str
  * @param translation lyric translation
  */
-const handleSetLyric = async(lyric: string, translation = '', romalrc = '') => {
-  lrcSetLyric(lyric, translation, romalrc)
+const handleSetLyric = async(lyric: string, translation = '', romalrc = '', lxlrc = '') => {
+  lrcSetLyric(lyric, translation, romalrc, lxlrc)
   await setDesktopLyric(lyric, translation, romalrc)
   if (settingState.setting['player.isShowBluetoothFullLyric']) {
     void updateNowPlayingTitles({
@@ -114,9 +114,11 @@ export const setLyric = async() => {
   if (playerState.musicInfo.lrc) {
     let tlrc = ''
     let rlrc = ''
+    let lxlrc = ''
     if (playerState.musicInfo.tlrc) tlrc = playerState.musicInfo.tlrc
     if (playerState.musicInfo.rlrc) rlrc = playerState.musicInfo.rlrc
-    await handleSetLyric(playerState.musicInfo.lrc, tlrc, rlrc)
+    if (playerState.musicInfo.lxlrc) lxlrc = playerState.musicInfo.lxlrc
+    await handleSetLyric(playerState.musicInfo.lrc, tlrc, rlrc, lxlrc)
   }
 
   if (playerState.isPlay) play()

@@ -32,10 +32,7 @@ export default memo(({ item, index, width, showSource, onPress }: {
                 { showSource ? <Text style={styles.sourceLabel} size={9} color="#fff" >{item.source}</Text> : null }
               </TouchableOpacity>
             </View>
-            <TouchableOpacity activeOpacity={0.5} onPress={handlePress}>
-              <Text style={styles.listItemTitle} numberOfLines={ 2 }>{item.name}</Text>
-            </TouchableOpacity>
-            {/* <Text>{JSON.stringify(item)}</Text> */}
+            <Text style={styles.listItemTitle} numberOfLines={ 2 }>{item.name}</Text>
           </View>
         )
       : <View style={{ ...styles.listItem, width: itemWidth }} />

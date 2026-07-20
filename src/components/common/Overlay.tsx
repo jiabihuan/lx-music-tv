@@ -43,12 +43,6 @@ export default forwardRef<OverlayType, OverlayProps>(({
   const [visible, setVisible] = useState(false)
   const statusBarHeight = useStatusbarHeight()
 
-  const handleRequestClose = () => {
-    if (keyHide) {
-      setVisible(false)
-      onHide()
-    }
-  }
   const handleBgClose = () => {
     if (bgHide) {
       setVisible(false)
@@ -84,11 +78,12 @@ export default forwardRef<OverlayType, OverlayProps>(({
 
   return (
     <View style={[StyleSheet.absoluteFill, { zIndex, elevation: zIndex, backgroundColor: bgColor }]}>
-      <TouchableWithoutFeedback style={{ flex: 1, paddingTop: statusBarPadding ? statusBarHeight : 0 }} onPress={handleBgClose}>
-        <View style={{ flex: 1 }}>
-          {memoChildren}
-        </View>
+      {/* 背景点击层：独立一层，不影响 children 的绝对定位参照物 */}
+      <TouchableWithoutFeedback onPress={handleBgClose}>
+        <View style={{ flex: 1, paddingTop: statusBarPadding ? statusBarHeight : 0 }} />
       </TouchableWithoutFeedback>
+      {/* 内容层：直接放在全屏 View 内，绝对定位参照物是屏幕 */}
+      {memoChildren}
     </View>
   )
 })
