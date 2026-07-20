@@ -1,10 +1,11 @@
 import { type InitParams, onScriptAction, sendAction, type ResponseParams, type UpdateInfoParams, type RequestParams } from '@/utils/nativeModules/userApi'
-import { log, setUserApiList, setUserApiStatus } from '@/core/userApi'
+import { log, setUserApiList, setUserApiStatus, importUserApi } from '@/core/userApi'
 import settingState from '@/store/setting/state'
 import BackgroundTimer from 'react-native-background-timer'
 import { fetchData } from './request'
 import { getUserApiList } from '@/utils/data'
 import { confirmDialog, openUrl, tipDialog } from '@/utils/tools'
+import RNFS from 'react-native-fs'
 
 
 export default async(setting: LX.AppSetting) => {
@@ -253,4 +254,26 @@ export default async(setting: LX.AppSetting) => {
   })
 
   setUserApiList(await getUserApiList())
+
+  // 自动加载内置自定义源脚本（assets/script/ 目录下除 user-api-preload.js 外的 .js 文件）
+  try {
+    const files = await RNFS.readDirAssets('script')
+    const existingNames = new Set(state.list.map(s => s.name))
+    for (const file of files) {
+      if (file.name === 'user-api-preload.js') continue
+      if (!file.name.endsWith('.js')) continue
+      const script = await RNFS.readFileAssets(`script/${file.name}`, 'utf8')
+      if (!script.trim()) continue
+      // 解析脚本头部信息获取 name
+      const nameMatch = script.match(/@name\s+(.+)/)
+      const sourceName = nameMatch ? nameMatch[1].trim() : file.name
+      // 如果已有同名源则跳过（避免重复导入）
+      if (existingNames.has(sourceName)) continue
+      await importUserApi(script)
+      console.log(`内置源已自动导入: ${sourceName}`)
+    }
+  } catch (err) {
+    // assets/script/ 目录可能不存在或读取失败，静默忽略
+    console.log('内置源自动加载失败:', err)
+  }
 }
