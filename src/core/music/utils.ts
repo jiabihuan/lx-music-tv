@@ -439,22 +439,25 @@ export const getOnlineOtherSourceLyricInfo = async({ musicInfos, onToggleSource,
     if (lyricInfo) return { musicInfo, lyricInfo, isFromCache: true }
   }
 
-  // 强制使用QQ音乐QRC逐字歌词
+  let reqPromise
   try {
-    const qrcLyricInfo: LX.Music.LyricInfo = await (musicSdk.tx.getQrcByKeyword(musicInfo.name, musicInfo.singer) as any).promise
-    if (qrcLyricInfo?.lyric && qrcLyricInfo?.lxlyric && existTimeExp.test(qrcLyricInfo.lyric)) {
-      return {
-        musicInfo,
-        lyricInfo: qrcLyricInfo,
-        isFromCache: false,
-      }
-    }
-  } catch (e) {
-    console.log('Get QRC lyric failed, try next source')
+    // TODO: remove any type
+    reqPromise = (musicSdk[musicInfo.source].getLyric(toOldMusicInfo(musicInfo)) as any).promise
+  } catch (err: any) {
+    reqPromise = Promise.reject(err)
   }
-
-  // QRC获取失败，尝试下一个来源
-  return getOnlineOtherSourceLyricInfo({ musicInfos, onToggleSource, isRefresh, retryedSource })
+  // retryedSource.includes(musicInfo.source)
+  return reqPromise.then(async(lyricInfo: LX.Music.LyricInfo) => {
+    return existTimeExp.test(lyricInfo.lyric) ? {
+      lyricInfo,
+      musicInfo,
+      isFromCache: false,
+    } : Promise.reject(new Error('failed'))
+    // eslint-disable-next-line @typescript-eslint/promise-function-async
+  }).catch((err: any) => {
+    console.log(err)
+    return getOnlineOtherSourceLyricInfo({ musicInfos, onToggleSource, isRefresh, retryedSource })
+  })
 }
 
 /**
@@ -470,33 +473,37 @@ export const handleGetOnlineLyricInfo = async({ musicInfo, onToggleSource, isRef
   lyricInfo: LX.Music.LyricInfo | LX.Player.LyricInfo
   isFromCache: boolean
 }> => {
-  // 强制使用QQ音乐QRC逐字歌词
+  // console.log(musicInfo.source)
+  let reqPromise
   try {
-    const qrcLyricInfo: LX.Music.LyricInfo = await (musicSdk.tx.getQrcByKeyword(musicInfo.name, musicInfo.singer) as any).promise
-    if (qrcLyricInfo?.lyric && qrcLyricInfo?.lxlyric && existTimeExp.test(qrcLyricInfo.lyric)) {
-      return {
-        musicInfo,
-        lyricInfo: qrcLyricInfo,
-        isFromCache: false,
-      }
-    }
-  } catch (e) {
-    console.log('Get QRC lyric failed')
+    // TODO: remove any type
+    reqPromise = (musicSdk[musicInfo.source].getLyric(toOldMusicInfo(musicInfo)) as any).promise
+  } catch (err) {
+    reqPromise = Promise.reject(err)
   }
+  return reqPromise.then(async(lyricInfo: LX.Music.LyricInfo) => {
+    return existTimeExp.test(lyricInfo.lyric) ? {
+      musicInfo,
+      lyricInfo,
+      isFromCache: false,
+    } : Promise.reject(new Error('failed'))
+  }).catch(async(err: any) => {
+    console.log(err)
+    if (!allowToggleSource) throw err
 
-  // QRC获取失败时，尝试切换来源继续找QRC歌词
-  if (!allowToggleSource) throw new Error('Get QRC lyric failed')
-  onToggleSource()
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
-  return getOtherSource(musicInfo).then(otherSource => {
-    if (otherSource.length) {
-      return getOnlineOtherSourceLyricInfo({
-        musicInfos: [...otherSource],
-        onToggleSource,
-        isRefresh,
-        retryedSource: [musicInfo.source],
-      })
-    }
-    throw new Error('Get QRC lyric failed')
+    onToggleSource()
+    // eslint-disable-next-line @typescript-eslint/promise-function-async
+    return getOtherSource(musicInfo).then(otherSource => {
+      // console.log('find otherSource', otherSource.length)
+      if (otherSource.length) {
+        return getOnlineOtherSourceLyricInfo({
+          musicInfos: [...otherSource],
+          onToggleSource,
+          isRefresh,
+          retryedSource: [musicInfo.source],
+        })
+      }
+      throw err
+    })
   })
 }
