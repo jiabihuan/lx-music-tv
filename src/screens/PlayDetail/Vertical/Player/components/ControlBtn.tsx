@@ -2,7 +2,6 @@ import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/F
 import {View} from 'react-native'
 import { Icon } from '@/components/common/Icon'
 import { useTheme } from '@/store/theme/hook'
-// import { useIsPlay } from '@/store/player/hook'
 import { playNext, playPrev, togglePlay } from '@/core/player/player'
 import { useIsPlay } from '@/store/player/hook'
 import { createStyle } from '@/utils/tools'
@@ -16,8 +15,8 @@ const PrevBtn = ({ size }: { size: number }) => {
     void playPrev()
   }
   return (
-    <TouchableOpacity style={{ ...styles.cotrolBtn, width: size, height: size }} activeOpacity={0.5} onPress={handlePlayPrev}>
-      <Icon name='prevMusic' color={theme['c-button-font']} rawSize={size * 0.7} />
+    <TouchableOpacity style={{ ...styles.cotrolBtn, width: size, height: size, borderRadius: size / 2 }} activeOpacity={0.5} onPress={handlePlayPrev}>
+      <Icon name='prevMusic' color={theme['c-button-font']} rawSize={size * 0.6} />
     </TouchableOpacity>
   )
 }
@@ -27,8 +26,8 @@ const NextBtn = ({ size }: { size: number }) => {
     void playNext()
   }
   return (
-    <TouchableOpacity style={{ ...styles.cotrolBtn, width: size, height: size }} activeOpacity={0.5} onPress={handlePlayNext}>
-      <Icon name='nextMusic' color={theme['c-button-font']} rawSize={size * 0.7} />
+    <TouchableOpacity style={{ ...styles.cotrolBtn, width: size, height: size, borderRadius: size / 2 }} activeOpacity={0.5} onPress={handlePlayNext}>
+      <Icon name='nextMusic' color={theme['c-button-font']} rawSize={size * 0.6} />
     </TouchableOpacity>
   )
 }
@@ -36,9 +35,11 @@ const NextBtn = ({ size }: { size: number }) => {
 const TogglePlayBtn = ({ size }: { size: number }) => {
   const theme = useTheme()
   const isPlay = useIsPlay()
+  // 中央播放/暂停按钮放大 1.2 倍，加圆形主题色背景，成为视觉焦点
+  const toggleSize = size * 1.2
   return (
-    <TouchableOpacity style={{ ...styles.cotrolBtn, width: size, height: size }} activeOpacity={0.5} onPress={togglePlay}>
-      <Icon name={isPlay ? 'pause' : 'play'} color={theme['c-button-font']} rawSize={size * 0.7} />
+    <TouchableOpacity style={{ ...styles.cotrolBtn, ...styles.toggleBtn, width: toggleSize, height: toggleSize, borderRadius: toggleSize / 2, backgroundColor: theme['c-primary'] }} activeOpacity={0.5} onPress={togglePlay}>
+      <Icon name={isPlay ? 'pause' : 'play'} color={theme['c-primary-font-active']} rawSize={toggleSize * 0.55} />
     </TouchableOpacity>
   )
 }
@@ -75,14 +76,19 @@ const styles = createStyle({
     flexShrink: 1,
     paddingHorizontal: '4%',
     paddingVertical: 22,
-    // backgroundColor: 'rgba(0, 0, 0, .1)',
   },
   cotrolBtn: {
     justifyContent: 'center',
     alignItems: 'center',
-
-    // backgroundColor: '#ccc',
     shadowOpacity: 1,
     textShadowRadius: 1,
+  },
+  toggleBtn: {
+    // 中央播放按钮用主题色圆形背景，视觉焦点
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
   },
 })
