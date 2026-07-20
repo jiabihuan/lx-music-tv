@@ -38,6 +38,7 @@ const LrcLine = memo(({ line, lineNum, activeLine, onLayout, lxLyricLine, lxProg
   const lineHeight = setSpText(size) * 1.3
   const [lineWidth, setLineWidth] = useState(0)
   const progressAnim = useRef(new Animated.Value(0)).current
+  const lastUpdateTimeRef = useRef(0)
 
   const isActive = activeLine == lineNum
 
@@ -53,15 +54,25 @@ const LrcLine = memo(({ line, lineNum, activeLine, onLayout, lxLyricLine, lxProg
     ] as const
   }, [isActive, theme])
 
-  // 进度变化时用 Animated.timing 平滑过渡（33ms 内完成，配合 33ms 计算频率实现 60fps 丝滑效果）
+  // 进度变化时用 Animated.timing 平滑过渡
+  // 用实际时间差计算 duration，保证动画速度恒定，避免忽快忽慢掉帧
   useEffect(() => {
     if (!isActive || !lxProgress || lxProgress.lineIndex !== lineNum) {
       progressAnim.setValue(0)
+      lastUpdateTimeRef.current = 0
       return
     }
+    const now = Date.now()
+    let duration = 33
+    if (lastUpdateTimeRef.current > 0) {
+      duration = now - lastUpdateTimeRef.current
+      if (duration < 16) duration = 16
+      if (duration > 100) duration = 100
+    }
+    lastUpdateTimeRef.current = now
     Animated.timing(progressAnim, {
       toValue: lxProgress.lineProgress,
-      duration: 33,
+      duration,
       useNativeDriver: false,
       easing: Easing.linear,
     }).start()

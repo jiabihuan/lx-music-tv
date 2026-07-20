@@ -1,4 +1,5 @@
-import { View } from 'react-native'
+import { useEffect } from 'react'
+import { View, BackHandler, ToastAndroid } from 'react-native'
 import Aside from './Aside'
 import PlayerBar from '@/components/player/PlayerBar'
 import StatusBar from '@/components/common/StatusBar'
@@ -17,7 +18,25 @@ const styles = createStyle({
   },
 })
 
+let lastBackPressed = 0
+
 export default () => {
+  useEffect(() => {
+    const backAction = () => {
+      const now = Date.now()
+      if (now - lastBackPressed < 2000) {
+        BackHandler.exitApp()
+        return true
+      }
+      lastBackPressed = now
+      ToastAndroid.show('再按一次退出应用', ToastAndroid.SHORT)
+      return true
+    }
+
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction)
+    return () => backHandler.remove()
+  }, [])
+
   return (
     <>
       <StatusBar />
