@@ -143,11 +143,11 @@ const LrcLine = memo(({ line, lineNum, activeLine, onLayout, lxLyricLine, lxProg
     && (nextProps.activeLine === nextProps.lineNum || prevProps.activeLine === prevProps.lineNum)) {
     return false
   }
-  // 激活行且逐字进度变化时更新（lineProgress 每帧变化，用 floor 降低更新频率）
+  // 激活行且逐字进度变化时更新（通知频率已降为 50ms 一次）
   if (prevProps.activeLine === prevProps.lineNum && nextProps.activeLine === nextProps.lineNum) {
     const prevProgress = prevProps.lxProgress
     const nextProgress = nextProps.lxProgress
-    if (Math.floor((prevProgress?.lineProgress ?? 0) * 100) !== Math.floor((nextProgress?.lineProgress ?? 0) * 100)) {
+    if (prevProgress?.lineProgress !== nextProgress?.lineProgress) {
       return false
     }
   }

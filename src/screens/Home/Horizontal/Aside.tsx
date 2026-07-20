@@ -12,7 +12,7 @@ import { exitApp, setNavActiveId } from '@/core/common'
 import { BorderWidths } from '@/theme'
 import { useSettingValue } from '@/store/setting/hook'
 
-const NAV_WIDTH = 96
+const NAV_WIDTH = 68
 
 const styles = createStyle({
   container: {
@@ -26,8 +26,8 @@ const styles = createStyle({
     width: NAV_WIDTH,
   },
   header: {
-    paddingTop: 20,
-    paddingBottom: 20,
+    paddingTop: 15,
+    paddingBottom: 15,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
@@ -45,8 +45,8 @@ const styles = createStyle({
   },
   menuItem: {
     flexDirection: 'row',
-    paddingTop: 18,
-    paddingBottom: 18,
+    paddingTop: 15,
+    paddingBottom: 15,
     // paddingLeft: 25,
     // paddingRight: 25,
     justifyContent: 'center',
@@ -98,7 +98,7 @@ const MenuItem = ({ id, icon, onPress, isFirst }: {
       hasTVPreferredFocus={isFirst}
     >
       <View style={styles.iconContent}>
-        <Icon name={icon} size={26} color={active ? theme['c-primary-font-active'] : theme['c-font-label']} />
+        <Icon name={icon} size={20} color={active ? theme['c-primary-font-active'] : theme['c-font-label']} />
       </View>
     </TouchableOpacity>
   )

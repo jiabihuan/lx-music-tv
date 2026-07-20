@@ -69,6 +69,7 @@ const lrcTools = {
   lxLyricRafId: null as number | null,
   lxLyricStartTime: 0,
   lxLyricStartProgress: 0,
+  lxLyricLastNotifyTime: 0,
   playbackRate: 1,
 
   init() {
@@ -261,13 +262,18 @@ const lrcTools = {
     this.lxLyricProgress = startProgress
     this.lxLyricStartTime = Date.now()
     this.lxLyricStartProgress = baseTime
+    this.lxLyricLastNotifyTime = 0
 
     const tick = () => {
       const elapsed = (Date.now() - this.lxLyricStartTime) * this.playbackRate
       const currentTime = this.lxLyricStartProgress + elapsed
       const progress = this.calcLxLyricProgress(currentTime)
       this.lxLyricProgress = progress
-      for (const hook of this.lxLyricPlayHooks) hook(progress)
+      // 降低通知频率到每 50ms 一次，减少 setState 次数，避免旧设备卡顿
+      if (elapsed - this.lxLyricLastNotifyTime >= 50) {
+        this.lxLyricLastNotifyTime = elapsed
+        for (const hook of this.lxLyricPlayHooks) hook(progress)
+      }
       this.lxLyricRafId = requestAnimationFrame(tick)
     }
 
@@ -316,8 +322,9 @@ export const setLyric = (lyric: string, translation?: string, romalrc?: string, 
   lrcTools.lyricText = lyric
   lrcTools.translationText = translation
   lrcTools.romaText = romalrc
-  lrcTools.setLyric()
+  // 先设置逐字歌词，确保 setLyricHooks 触发时 lxLyricLines 已是最新
   lrcTools.setLxLyric(lxlrc || '')
+  lrcTools.setLyric()
   lrcTools.pauseLxLyricPlay()
 }
 export const setPlaybackRate = (playbackRate: number) => {
