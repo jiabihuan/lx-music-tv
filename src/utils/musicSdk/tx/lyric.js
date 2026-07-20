@@ -1,5 +1,5 @@
 import { httpFetch } from '../../request'
-import { b64DecodeUnicode, decodeName } from '../../index'
+import { decodeName } from '../../index'
 
 const parseQrc = qrcStr => {
   qrcStr = qrcStr.replace(/\r/g, '')
@@ -59,24 +59,6 @@ const parseQrc = qrcStr => {
   }
 }
 
-const getLyricFallback = songmid => {
-  const requestObj = httpFetch(`https://c.y.qq.com/lyric/fcgi-bin/fcg_query_lyric_new.fcg?songmid=${songmid}&g_tk=5381&loginUin=0&hostUin=0&format=json&inCharset=utf8&outCharset=utf-8&platform=yqq`, {
-    headers: {
-      Referer: 'https://y.qq.com/portal/player.html',
-    },
-  })
-  requestObj.promise = requestObj.promise.then(({ body }) => {
-    if (body.code != 0 || !body.lyric) return Promise.reject(new Error('Get lyric failed'))
-    return {
-      lyric: decodeName(b64DecodeUnicode(body.lyric)),
-      tlyric: body.trans ? decodeName(b64DecodeUnicode(body.trans)) : '',
-      rlyric: '',
-      lxlyric: '',
-    }
-  })
-  return requestObj
-}
-
 export default {
   regexps: {
     matchLrc: /.+"lyric":"([\w=+/]*)".+/,
@@ -89,18 +71,20 @@ export default {
     })
     requestObj.promise = requestObj.promise.then(({ body }) => {
       if (body.code != 1 || !body.data?.content) {
-        return getLyricFallback(songmid).promise
+        return Promise.reject(new Error('Get QRC lyric failed'))
       }
       const qrcContent = body.data.content
       const { lyric, lxlyric } = parseQrc(qrcContent)
-      if (!lyric) return getLyricFallback(songmid).promise
+      if (!lyric || !lxlyric) {
+        return Promise.reject(new Error('Parse QRC lyric failed'))
+      }
       return {
         lyric: decodeName(lyric),
         tlyric: '',
         rlyric: '',
         lxlyric: decodeName(lxlyric),
       }
-    }).catch(() => getLyricFallback(songmid).promise)
+    })
     return requestObj
   },
   getQrcByKeyword(name, singer) {
