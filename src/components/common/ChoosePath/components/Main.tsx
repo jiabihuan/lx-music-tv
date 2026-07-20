@@ -27,7 +27,7 @@ export default ({ list, loading, onSetPath, toParentDir }: {
         desc: t('parent_dir_name'),
         isDir: true,
         path: '',
-      }} rowInfo={fullRow.current} onPress={toParentDir} />
+      }} rowInfo={fullRow.current} onPress={toParentDir} hasTVPreferredFocus />
     </View>
   ), [t, theme, toParentDir])
 

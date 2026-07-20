@@ -3,7 +3,7 @@ import { View } from 'react-native'
 import { externalStorageDirectoryPath, readDir } from '@/utils/fs'
 import { createStyle, toast } from '@/utils/tools'
 // import { useTranslation } from '@/plugins/i18n'
-import Modal, { type ModalType } from '@/components/common/Modal'
+import Overlay, { type OverlayType } from '@/components/common/Overlay'
 
 import Header from './components/Header'
 import Main from './components/Main'
@@ -92,7 +92,7 @@ export default forwardRef<ListType, ListProps>(({
   const isUnmountedRef = useRef(true)
   const readOptions = useRef<ReadOptions>(initReadOptions as ReadOptions)
   const [isReading, setIsReading] = useState(false)
-  const modalRef = useRef<ModalType>(null)
+  const overlayRef = useRef<OverlayType>(null)
   const theme = useTheme()
 
   useImperativeHandle(ref, () => ({
@@ -102,7 +102,7 @@ export default forwardRef<ListType, ListProps>(({
         dirOnly,
         filter,
       }
-      modalRef.current?.setVisible(true)
+      overlayRef.current?.setVisible(true)
       // void getSelectedManagedFolder().then(uri => {
       //   if (!uri) return
       //   void readDir(uri, dirOnly, filter)
@@ -111,7 +111,7 @@ export default forwardRef<ListType, ListProps>(({
       else void readDir(externalStorageDirectoryPath, dirOnly, filter)
     },
     hide() {
-      modalRef.current?.setVisible(false)
+      overlayRef.current?.setVisible(false)
     },
   }))
 
@@ -166,14 +166,14 @@ export default forwardRef<ListType, ListProps>(({
   }
 
   const handleHide = () => {
-    modalRef.current?.setVisible(false)
+    overlayRef.current?.setVisible(false)
     onHide()
   }
 
   // const dirList = useMemo(() => [parentDir, ...list], [list, parentDir])
 
   return (
-    <Modal ref={modalRef} bgHide={false} statusBarPadding={false}>
+    <Overlay ref={overlayRef} bgHide={false} statusBarPadding={false}>
       <View style={{ ...styles.container, backgroundColor: theme['c-content-background'] }}>
         <Header
           onRefreshDir={async(path) => readDir(path, readOptions.current.dirOnly, readOptions.current.filter, true)}
@@ -183,7 +183,7 @@ export default forwardRef<ListType, ListProps>(({
         <Main list={list} toParentDir={toParentDir} onSetPath={onSetPath} loading={isReading} />
         <Footer onConfirm={handleConfirm} onHide={handleHide} dirOnly={readOptions.current.dirOnly} />
       </View>
-    </Modal>
+    </Overlay>
   )
 })
 

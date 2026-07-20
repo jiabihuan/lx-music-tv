@@ -3,11 +3,14 @@ import ConfirmAlert, { type ConfirmAlertType } from '@/components/common/Confirm
 import Text from '@/components/common/Text'
 import { View } from 'react-native'
 import Input, { type InputType } from '@/components/common/Input'
-import { createStyle, toast } from '@/utils/tools'
+import Button from '@/components/common/Button'
+import { createStyle, toast, TEMP_FILE_PATH } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
 import { httpFetch } from '@/utils/request'
 import { handleImportScript } from './action'
+import { selectFile, unlink } from '@/utils/fs'
+import { decodeQrFromFile } from '@/utils/qrDecode'
 
 interface UrlInputType {
   setText: (text: string) => void
@@ -52,6 +55,7 @@ export interface ScriptImportOnlineType {
 
 export default forwardRef<ScriptImportOnlineType, {}>((props, ref) => {
   const t = useI18n()
+  const theme = useTheme()
   const alertRef = useRef<ConfirmAlertType>(null)
   const urlInputRef = useRef<UrlInputType>(null)
   const [visible, setVisible] = useState(false)
@@ -105,6 +109,39 @@ export default forwardRef<ScriptImportOnlineType, {}>((props, ref) => {
     alertRef.current?.setVisible(false)
   }
 
+  const handleQrScan = async() => {
+    try {
+      const file = await selectFile({
+        extTypes: ['jpg', 'jpeg', 'png', 'webp', 'bmp'],
+        toPath: TEMP_FILE_PATH + '_qr',
+      })
+      if (!file?.data) return
+      try {
+        const decoded = await decodeQrFromFile(file.data)
+        if (!decoded) {
+          toast(t('user_api_btn_import_online_qr_scan_no_url'), 'long')
+          return
+        }
+        // 提取 URL（如果二维码内容是纯 URL，直接使用；否则尝试提取其中的 URL）
+        let url = decoded.trim()
+        const urlMatch = url.match(/https?:\/\/[^\s"'<>]+/)
+        if (urlMatch) url = urlMatch[0]
+        if (!/^https?:\/\//.test(url)) {
+          toast(t('user_api_btn_import_online_qr_scan_no_url'), 'long')
+          return
+        }
+        urlInputRef.current?.setText(url)
+        toast(t('user_api_btn_import_online_qr_scan_success'), 'short')
+      } catch (err: any) {
+        toast(t('user_api_btn_import_online_qr_scan_failed', { message: err.message ?? String(err) }), 'long')
+      } finally {
+        void unlink(file.data).catch(() => {})
+      }
+    } catch (err: any) {
+      // 用户取消选择文件，不提示
+    }
+  }
+
   return (
     visible
       ? <ConfirmAlert
@@ -116,6 +153,12 @@ export default forwardRef<ScriptImportOnlineType, {}>((props, ref) => {
           <View style={styles.reurlContent}>
             <Text style={{ marginBottom: 5 }}>{ t('user_api_btn_import_online')}</Text>
             <UrlInput ref={urlInputRef} />
+            <Button
+              style={{ ...styles.qrBtn, backgroundColor: theme['c-button-background'], borderColor: theme['c-primary'] }}
+              onPress={handleQrScan}
+            >
+              <Text size={13} color={theme['c-button-font']}>{t('user_api_btn_import_online_qr_scan')}</Text>
+            </Button>
           </View>
         </ConfirmAlert>
       : null
@@ -128,6 +171,13 @@ const styles = createStyle({
     flexGrow: 1,
     flexShrink: 1,
     flexDirection: 'column',
+  },
+  qrBtn: {
+    marginTop: 8,
+    padding: 6,
+    alignItems: 'center',
+    borderRadius: 4,
+    borderWidth: 1,
   },
   input: {
     flexGrow: 1,

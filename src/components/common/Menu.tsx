@@ -1,9 +1,9 @@
-import { useImperativeHandle, forwardRef, useMemo, useRef, useState, type Ref } from 'react'
+import { useImperativeHandle, forwardRef, useMemo, useRef, useState, useEffect, type Ref } from 'react'
 import { View, Animated } from 'react-native'
 import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import { useWindowSize } from '@/utils/hooks'
 
-import Modal, { type ModalType } from './Modal'
+import Overlay, { type OverlayType } from './Overlay'
 
 import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
@@ -79,6 +79,20 @@ const Menu = ({
   const windowSize = useWindowSize()
   // const fadeAnim = useRef(new Animated.Value(0)).current
   // console.log(buttonPosition)
+  const firstItemRef = useRef<TouchableOpacity>(null)
+
+  // 弹窗打开后自动聚焦第一个菜单项，确保 D-pad 可以从该项开始导航
+  useEffect(() => {
+    const t1 = setTimeout(() => {
+      const ref = firstItemRef.current as any
+      ref?.focus?.()
+    }, 100)
+    const t2 = setTimeout(() => {
+      const ref = firstItemRef.current as any
+      ref?.focus?.()
+    }, 300)
+    return () => { clearTimeout(t1); clearTimeout(t2) }
+  }, [])
 
   const menuItemStyle = useMemo(() => {
     return {
@@ -144,6 +158,7 @@ const Menu = ({
               : (
                     <TouchableOpacity
                       key={menu.action}
+                      ref={index === 0 ? firstItemRef : undefined}
                       style={{ ...styles.menuItem, width: menuItemStyle.width, height: menuItemStyle.height }}
                       hasTVPreferredFocus={index === 0}
                       onPress={() => { menuPress(menu) }}
@@ -177,17 +192,17 @@ export interface MenuType {
 
 const Component = <M extends Menus>({ menus, width, height, activeId, onHide, onPress, fontSize, center }: MenuProps<M>, ref: Ref<MenuType>) => {
   // console.log(visible)
-  const modalRef = useRef<ModalType>(null)
+  const overlayRef = useRef<OverlayType>(null)
   const [position, setPosition] = useState<Position>({ w: 0, h: 0, x: 0, y: 0 })
   const [menuSize, setMenuSize] = useState<MenuSize>({ })
   const hide = () => {
-    modalRef.current?.setVisible(false)
+    overlayRef.current?.setVisible(false)
   }
   useImperativeHandle(ref, () => ({
     show(newPosition, menuSize) {
       setPosition(newPosition)
       if (menuSize) setMenuSize(menuSize)
-      modalRef.current?.setVisible(true)
+      overlayRef.current?.setVisible(true)
     },
     hide() {
       hide()
@@ -195,9 +210,9 @@ const Component = <M extends Menus>({ menus, width, height, activeId, onHide, on
   }))
 
   return (
-    <Modal onHide={onHide} ref={modalRef}>
+    <Overlay onHide={onHide} ref={overlayRef}>
       <Menu menus={menus} width={width} height={height} activeId={activeId} buttonPosition={position} menuSize={menuSize} onPress={onPress} onHide={hide} fontSize={fontSize} center={center} />
-    </Modal>
+    </Overlay>
   )
 }
 

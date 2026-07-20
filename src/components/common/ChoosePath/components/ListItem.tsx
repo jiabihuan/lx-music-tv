@@ -17,10 +17,11 @@ export interface PathItem {
   disabled?: boolean
 }
 
-export default memo(({ item, onPress, rowInfo }: {
+export default memo(({ item, onPress, rowInfo, hasTVPreferredFocus }: {
   item: PathItem
   onPress: (item: PathItem) => void
   rowInfo: RowInfo
+  hasTVPreferredFocus?: boolean
 }) => {
   const theme = useTheme()
 
@@ -49,7 +50,7 @@ export default memo(({ item, onPress, rowInfo }: {
             }
           </View>
         ) : (
-          <TouchableOpacity style={styles.listItem} onPress={ () => { onPress(item) } }>
+          <TouchableOpacity style={styles.listItem} hasTVPreferredFocus={hasTVPreferredFocus} onPress={ () => { onPress(item) } }>
             <View style={styles.itemInfo}>
               <Text style={styles.listItemTitleText}>{item.name}</Text>
               <Text style={styles.listItemDesc} size={12} color={theme['c-font-label']} numberOfLines={1}>{item.mtime ? new Date(item.mtime).toLocaleString() : item.desc}</Text>
