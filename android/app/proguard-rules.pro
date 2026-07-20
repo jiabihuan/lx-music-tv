@@ -24,3 +24,7 @@
   **[] $VALUES;
   public *;
 }
+
+# ZXing (二维码生成)
+-keep class com.google.zxing.** { *; }
+-keepclassmembers class com.google.zxing.** { *; }

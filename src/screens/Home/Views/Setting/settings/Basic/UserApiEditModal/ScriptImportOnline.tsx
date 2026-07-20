@@ -11,6 +11,7 @@ import { httpFetch } from '@/utils/request'
 import { handleImportScript } from './action'
 import { selectFile, unlink } from '@/utils/fs'
 import { decodeQrFromFile } from '@/utils/qrDecode'
+import QrImportModal, { type QrImportModalType } from './QrImportModal'
 
 interface UrlInputType {
   setText: (text: string) => void
@@ -58,6 +59,7 @@ export default forwardRef<ScriptImportOnlineType, {}>((props, ref) => {
   const theme = useTheme()
   const alertRef = useRef<ConfirmAlertType>(null)
   const urlInputRef = useRef<UrlInputType>(null)
+  const qrModalRef = useRef<QrImportModalType>(null)
   const [visible, setVisible] = useState(false)
   const [btn, setBtn] = useState({ disabled: false, text: t('user_api_btn_import_online_input_confirm') })
 
@@ -83,13 +85,7 @@ export default forwardRef<ScriptImportOnlineType, {}>((props, ref) => {
     },
   }))
 
-  const handleImport = async() => {
-    let url = urlInputRef.current?.getText() ?? ''
-    if (!/^https?:\/\//.test(url)) {
-      url = ''
-      urlInputRef.current?.setText('')
-    }
-    if (!url.length) return
+  const doImport = async(url: string) => {
     setBtn({ disabled: true, text: t('user_api_btn_import_online_input_loading') })
     let script: string
     try {
@@ -109,7 +105,29 @@ export default forwardRef<ScriptImportOnlineType, {}>((props, ref) => {
     alertRef.current?.setVisible(false)
   }
 
-  const handleQrScan = async() => {
+  const handleImport = async() => {
+    let url = urlInputRef.current?.getText() ?? ''
+    if (!/^https?:\/\//.test(url)) {
+      url = ''
+      urlInputRef.current?.setText('')
+    }
+    if (!url.length) return
+    await doImport(url)
+  }
+
+  // 手机扫码推送：弹出二维码弹窗，用户手机扫码后推送 URL
+  const handleQrScan = () => {
+    qrModalRef.current?.show()
+  }
+
+  // 接收到手机推送的 URL 后，自动填入输入框并触发导入
+  const handleUrlReceived = (url: string) => {
+    urlInputRef.current?.setText(url)
+    void doImport(url)
+  }
+
+  // 本地图片识别二维码（备用方案，TV 设备没有摄像头时可以用其他设备截图后导入）
+  const handleLocalImageQr = async() => {
     try {
       const file = await selectFile({
         extTypes: ['jpg', 'jpeg', 'png', 'webp', 'bmp'],
@@ -122,7 +140,6 @@ export default forwardRef<ScriptImportOnlineType, {}>((props, ref) => {
           toast(t('user_api_btn_import_online_qr_scan_no_url'), 'long')
           return
         }
-        // 提取 URL（如果二维码内容是纯 URL，直接使用；否则尝试提取其中的 URL）
         let url = decoded.trim()
         const urlMatch = url.match(/https?:\/\/[^\s"'<>]+/)
         if (urlMatch) url = urlMatch[0]
@@ -143,25 +160,36 @@ export default forwardRef<ScriptImportOnlineType, {}>((props, ref) => {
   }
 
   return (
-    visible
-      ? <ConfirmAlert
-          ref={alertRef}
-          onConfirm={handleImport}
-          disabledConfirm={btn.disabled}
-          confirmText={btn.text}
-        >
-          <View style={styles.reurlContent}>
-            <Text style={{ marginBottom: 5 }}>{ t('user_api_btn_import_online')}</Text>
-            <UrlInput ref={urlInputRef} />
-            <Button
-              style={{ ...styles.qrBtn, backgroundColor: theme['c-button-background'], borderColor: theme['c-primary'] }}
-              onPress={handleQrScan}
-            >
-              <Text size={13} color={theme['c-button-font']}>{t('user_api_btn_import_online_qr_scan')}</Text>
-            </Button>
-          </View>
-        </ConfirmAlert>
-      : null
+    <>
+      {visible
+        ? <ConfirmAlert
+            ref={alertRef}
+            onConfirm={handleImport}
+            disabledConfirm={btn.disabled}
+            confirmText={btn.text}
+          >
+            <View style={styles.reurlContent}>
+              <Text style={{ marginBottom: 5 }}>{ t('user_api_btn_import_online')}</Text>
+              <UrlInput ref={urlInputRef} />
+              <View style={styles.btnRow}>
+                <Button
+                  style={{ ...styles.qrBtn, backgroundColor: theme['c-button-background'], borderColor: theme['c-primary'] }}
+                  onPress={handleQrScan}
+                >
+                  <Text size={13} color={theme['c-button-font']}>{t('user_api_btn_import_online_qr_scan')}</Text>
+                </Button>
+                <Button
+                  style={{ ...styles.qrBtn, backgroundColor: theme['c-button-background'], borderColor: theme['c-primary-light-300-alpha-400'] }}
+                  onPress={handleLocalImageQr}
+                >
+                  <Text size={13} color={theme['c-button-font']}>{t('user_api_btn_import_online_qr_local')}</Text>
+                </Button>
+              </View>
+            </View>
+          </ConfirmAlert>
+        : null}
+      <QrImportModal ref={qrModalRef} onUrlReceived={handleUrlReceived} />
+    </>
   )
 })
 
@@ -172,8 +200,13 @@ const styles = createStyle({
     flexShrink: 1,
     flexDirection: 'column',
   },
-  qrBtn: {
+  btnRow: {
+    flexDirection: 'row',
     marginTop: 8,
+    gap: 8,
+  },
+  qrBtn: {
+    flex: 1,
     padding: 6,
     alignItems: 'center',
     borderRadius: 4,
@@ -184,9 +217,5 @@ const styles = createStyle({
     flexShrink: 1,
     minWidth: 290,
     borderRadius: 4,
-    // paddingTop: 2,
-    // paddingBottom: 2,
   },
 })
-
-
