@@ -11,7 +11,6 @@ import { httpFetch } from '@/utils/request'
 import { handleImportScript } from './action'
 import { selectFile, unlink } from '@/utils/fs'
 import { decodeQrFromFile } from '@/utils/qrDecode'
-import QrImportModal, { type QrImportModalType } from './QrImportModal'
 
 interface UrlInputType {
   setText: (text: string) => void
@@ -59,7 +58,6 @@ export default forwardRef<ScriptImportOnlineType, {}>((props, ref) => {
   const theme = useTheme()
   const alertRef = useRef<ConfirmAlertType>(null)
   const urlInputRef = useRef<UrlInputType>(null)
-  const qrModalRef = useRef<QrImportModalType>(null)
   const [visible, setVisible] = useState(false)
   const [btn, setBtn] = useState({ disabled: false, text: t('user_api_btn_import_online_input_confirm') })
 
@@ -115,18 +113,7 @@ export default forwardRef<ScriptImportOnlineType, {}>((props, ref) => {
     await doImport(url)
   }
 
-  // 手机扫码推送：弹出二维码弹窗，用户手机扫码后推送 URL
-  const handleQrScan = () => {
-    qrModalRef.current?.show()
-  }
-
-  // 接收到手机推送的 URL 后，自动填入输入框并触发导入
-  const handleUrlReceived = (url: string) => {
-    urlInputRef.current?.setText(url)
-    void doImport(url)
-  }
-
-  // 本地图片识别二维码（备用方案，TV 设备没有摄像头时可以用其他设备截图后导入）
+  // 本地图片识别二维码（TV 设备没有摄像头时可以用其他设备截图后导入）
   const handleLocalImageQr = async() => {
     try {
       const file = await selectFile({
@@ -173,12 +160,6 @@ export default forwardRef<ScriptImportOnlineType, {}>((props, ref) => {
               <UrlInput ref={urlInputRef} />
               <View style={styles.btnRow}>
                 <Button
-                  style={{ ...styles.qrBtn, backgroundColor: theme['c-button-background'], borderColor: theme['c-primary'] }}
-                  onPress={handleQrScan}
-                >
-                  <Text size={13} color={theme['c-button-font']}>{t('user_api_btn_import_online_qr_scan')}</Text>
-                </Button>
-                <Button
                   style={{ ...styles.qrBtn, backgroundColor: theme['c-button-background'], borderColor: theme['c-primary-light-300-alpha-400'] }}
                   onPress={handleLocalImageQr}
                 >
@@ -188,7 +169,6 @@ export default forwardRef<ScriptImportOnlineType, {}>((props, ref) => {
             </View>
           </ConfirmAlert>
         : null}
-      <QrImportModal ref={qrModalRef} onUrlReceived={handleUrlReceived} />
     </>
   )
 })
