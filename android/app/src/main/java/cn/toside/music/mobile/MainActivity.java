@@ -470,6 +470,11 @@ public class MainActivity extends NavigationActivity {
             sendKeyToJS(keyCode, event);
             return true;
         }
+        // KTV 全屏播放：音量键转发 JS 调节音量，不参与系统音量调节
+        if (fullscreenKeyCapture && isVolumeKey(keyCode)) {
+            sendKeyToJS(keyCode, event);
+            return true;
+        }
         // 菜单键：开发模式下弹出 RN DevServer 菜单
         if (keyCode == KeyEvent.KEYCODE_MENU) {
             ReactInstanceManager rim = getReactInstanceManager();
@@ -558,6 +563,20 @@ public class MainActivity extends NavigationActivity {
             case KeyEvent.KEYCODE_ENTER:
             case KeyEvent.KEYCODE_NUMPAD_ENTER:
             case KeyEvent.KEYCODE_MENU:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * 判断是否是音量键
+     */
+    private boolean isVolumeKey(int keyCode) {
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_VOLUME_UP:
+            case KeyEvent.KEYCODE_VOLUME_DOWN:
+            case KeyEvent.KEYCODE_VOLUME_MUTE:
                 return true;
             default:
                 return false;

@@ -117,3 +117,7 @@ export const requestIgnoreBatteryOptimization = async() => new Promise<boolean>(
 export const setFocusBorderColor = (color: string) => {
   UtilsModule.setFocusBorderColor(color)
 }
+
+export const adjustVolume = (direction: number) => {
+  UtilsModule.adjustVolume(direction)
+}

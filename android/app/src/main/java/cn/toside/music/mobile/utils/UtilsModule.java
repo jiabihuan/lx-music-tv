@@ -14,6 +14,7 @@ import android.os.Build;
 import android.util.Log;
 import android.view.Window;
 import android.view.WindowManager;
+import android.media.AudioManager;
 
 import androidx.core.app.LocaleManagerCompat;
 import androidx.core.content.FileProvider;
@@ -214,6 +215,25 @@ public class UtilsModule extends ReactContextBaseJavaModule {
        Intent intent = new Intent(currentActivity, cn.toside.music.mobile.ktv.KtvActivity.class);
        currentActivity.startActivity(intent);
      }
+   }
+
+   /**
+    * 调节音量（KTV 全屏播放时使用）
+    * @param direction 1 增大音量，-1 减小音量
+    */
+   @ReactMethod
+   public void adjustVolume(int direction) {
+     Activity currentActivity = getCurrentActivity();
+     if (currentActivity == null) return;
+     AudioManager audioManager = (AudioManager) currentActivity.getSystemService(Context.AUDIO_SERVICE);
+     if (audioManager == null) return;
+     int streamType = AudioManager.STREAM_MUSIC;
+     int maxVolume = audioManager.getStreamMaxVolume(streamType);
+     int currentVolume = audioManager.getStreamVolume(streamType);
+     int newVolume = currentVolume + direction;
+     if (newVolume < 0) newVolume = 0;
+     if (newVolume > maxVolume) newVolume = maxVolume;
+     audioManager.setStreamVolume(streamType, newVolume, 0);
    }
 
   @ReactMethod
