@@ -196,7 +196,7 @@ public class UtilsModule extends ReactContextBaseJavaModule {
 
    /**
     * 动态设置 TV 遥控器焦点框边框颜色
-    * @param colorStr 十六进制颜色字符串，如 "#FF69B4"，空字符串使用默认粉红
+    * @param colorStr 十六进制颜色字符串，如 "#2CA3F3"，空字符串使用默认主题蓝
     */
    @ReactMethod
    public void setFocusBorderColor(String colorStr) {

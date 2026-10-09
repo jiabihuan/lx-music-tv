@@ -573,6 +573,7 @@
   "setting_basic_theme_wallpaper_mask_tip": "The mask is black; higher value darkens the wallpaper and improves text readability",
   "ai_search_not_found": "No song found for \"{name}\"",
   "setting_theme_focus_border_color": "Focus border color",
+  "setting_theme_focus_border_color_auto": "Follow theme",
   "setting_theme_focus_border_color_pink": "Pink",
   "setting_theme_focus_border_color_white": "White",
   "setting_theme_focus_border_color_black": "Black",

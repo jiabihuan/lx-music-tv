@@ -573,6 +573,7 @@
   "setting_basic_theme_wallpaper_mask_tip": "遮罩为黑色，值越大壁纸越暗、文字越清晰",
   "ai_search_not_found": "未找到「{name}」的歌曲",
   "setting_theme_focus_border_color": "焦点框颜色",
+  "setting_theme_focus_border_color_auto": "跟随主题",
   "setting_theme_focus_border_color_pink": "粉红",
   "setting_theme_focus_border_color_white": "白色",
   "setting_theme_focus_border_color_black": "黑色",

@@ -65,22 +65,23 @@ public class MainActivity extends NavigationActivity {
         return fullscreenKeyCapture;
     }
 
-    /** 用户选择的焦点框边框颜色（默认粉红） */
-    private static int focusBorderColor = 0xFFFF69B4;
+    /** 用户选择的焦点框边框颜色（默认酷狗TV蓝） */
+    private static final int DEFAULT_FOCUS_BORDER_COLOR = 0xFF2CA3F3;
+    private static int focusBorderColor = DEFAULT_FOCUS_BORDER_COLOR;
 
     /**
      * 动态设置焦点框颜色，由 JS 侧通过 UtilsModule 调用
-     * @param colorStr 十六进制颜色字符串，如 "#FF69B4" 或 "#FFFFFF"，空字符串则重置为粉红
+     * @param colorStr 十六进制颜色字符串，如 "#2CA3F3" 或 "#FFFFFF"，空字符串则重置为默认蓝
      */
     public void setFocusBorderColor(String colorStr) {
         if (colorStr == null || colorStr.isEmpty()) {
-            focusBorderColor = 0xFFFF69B4;
+            focusBorderColor = DEFAULT_FOCUS_BORDER_COLOR;
         } else {
             try {
                 String hex = colorStr.startsWith("#") ? colorStr.substring(1) : colorStr;
                 focusBorderColor = Color.parseColor("#" + hex);
             } catch (NumberFormatException e) {
-                focusBorderColor = 0xFFFF69B4;
+                focusBorderColor = DEFAULT_FOCUS_BORDER_COLOR;
             }
         }
         // 应用新颜色到所有已设置焦点的 View
@@ -257,15 +258,22 @@ public class MainActivity extends NavigationActivity {
 
     /**
      * 判断 View 是否无需系统焦点高亮前景。
-     * 沿祖先链查找带 `tv_no_focus_highlight_` 前缀 nativeID 的 View
-     * （如 KTV 全屏播放的透明焦点锚点），命中则跳过应用白色焦点框。
+     * 沿祖先链查找带以下前缀 nativeID 的 View：
+     *  - `tv_no_focus_highlight_`：无需任何焦点高亮（如 KTV 全屏播放的透明焦点锚点）
+     *  - `tv_adjustable_`：滑块/进度条等可调节控件，JS 侧自绘焦点高亮，
+     *    原生不再叠加前景框，避免出现双重边框
+     * 命中则跳过应用焦点前景。
      */
     private boolean isNoFocusHighlightView(View view) {
         View v = view;
         while (v != null) {
             Object tag = v.getTag(com.facebook.react.R.id.view_tag_native_id);
-            if (tag instanceof String && ((String) tag).startsWith(TV_NO_FOCUS_HIGHLIGHT_PREFIX)) {
-                return true;
+            if (tag instanceof String) {
+                String nativeId = (String) tag;
+                if (nativeId.startsWith(TV_NO_FOCUS_HIGHLIGHT_PREFIX)
+                        || nativeId.startsWith(TV_ADJUSTABLE_PREFIX)) {
+                    return true;
+                }
             }
             Object parent = v.getParent();
             if (!(parent instanceof View)) break;
@@ -300,14 +308,14 @@ public class MainActivity extends NavigationActivity {
         try {
             GradientDrawable focusedShape = new GradientDrawable();
             focusedShape.setShape(GradientDrawable.RECTANGLE);
-            focusedShape.setCornerRadius(6f);
-            focusedShape.setColor(0x26FFFFFF);
-            focusedShape.setStroke(3, focusBorderColor);
+            focusedShape.setCornerRadius(10f);
+            focusedShape.setColor(0x0DFFFFFF);
+            focusedShape.setStroke(2, focusBorderColor);
 
             GradientDrawable pressedShape = new GradientDrawable();
             pressedShape.setShape(GradientDrawable.RECTANGLE);
-            pressedShape.setCornerRadius(6f);
-            pressedShape.setColor(0x44FFFFFF);
+            pressedShape.setCornerRadius(10f);
+            pressedShape.setColor(0x24FFFFFF);
 
             ColorStateList colorStateList = ColorStateList.valueOf(focusBorderColor);
 

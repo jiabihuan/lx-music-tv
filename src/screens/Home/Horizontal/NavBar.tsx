@@ -21,20 +21,25 @@ const NavItem = ({ id, icon, onPress, isFirst }: {
   isFirst?: boolean
 }) => {
   const t = useI18n()
-  const activeId = useNavActiveId()
   const theme = useTheme()
+  const activeId = useNavActiveId()
   const active = activeId == id
 
   return (
     <TouchableOpacity
-      style={{ ...styles.navItem, ...(active ? { backgroundColor: theme['c-primary'], borderRadius: 6 } : {}) }}
+      style={styles.navItem}
+      focusStyle={{ ...styles.navItemFocus, backgroundColor: theme['c-primary-alpha-900'] }}
       onPress={() => { onPress(id) }}
       hasTVPreferredFocus={isFirst}
     >
       <View style={styles.iconContent}>
-        <Icon name={icon} size={20} color={active ? '#FFFFFF' : theme['c-font-label']} />
+        <Icon name={icon} size={21} color={active ? theme['c-primary'] : theme['c-font-label']} />
       </View>
-      <Text style={styles.text} size={16} color={active ? '#FFFFFF' : theme['c-font-label']}>{t(id)}</Text>
+      <Text style={styles.text} size={17} color={active ? theme['c-primary'] : theme['c-font-label']}>{t(id)}</Text>
+      {/* 酷狗TV风格：激活项底部主题色指示条 */}
+      <View style={styles.indicatorWrap}>
+        <View style={{ ...styles.indicator, backgroundColor: active ? theme['c-primary'] : 'transparent' }} />
+      </View>
     </TouchableOpacity>
   )
 }
@@ -47,14 +52,18 @@ const SettingBtn = () => {
 
   return (
     <TouchableOpacity
-      style={{ ...styles.navItem, ...(active ? { backgroundColor: theme['c-primary'], borderRadius: 6 } : {}) }}
+      style={styles.navItem}
+      focusStyle={{ ...styles.navItemFocus, backgroundColor: theme['c-primary-alpha-900'] }}
       onPress={() => { setNavActiveId('nav_setting') }}
       activeOpacity={0.5}
     >
       <View style={styles.iconContent}>
-        <Icon name="setting" size={20} color={active ? '#FFFFFF' : theme['c-font-label']} />
+        <Icon name="setting" size={21} color={active ? theme['c-primary'] : theme['c-font-label']} />
       </View>
-      <Text style={styles.text} size={16} color={active ? '#FFFFFF' : theme['c-font-label']}>{t('nav_setting')}</Text>
+      <Text style={styles.text} size={17} color={active ? theme['c-primary'] : theme['c-font-label']}>{t('nav_setting')}</Text>
+      <View style={styles.indicatorWrap}>
+        <View style={{ ...styles.indicator, backgroundColor: active ? theme['c-primary'] : 'transparent' }} />
+      </View>
     </TouchableOpacity>
   )
 }
@@ -76,14 +85,14 @@ export default memo(() => {
       }}
     >
       <View style={styles.header}>
-        <Icon name="logo" color={theme['c-primary-dark-100-alpha-300']} size={24} />
-        <Text style={styles.headerText} size={15} color={theme['c-primary-dark-100-alpha-300']}>星河音乐</Text>
+        <Icon name="logo" color={theme['c-primary-dark-100-alpha-300']} size={26} />
+        <Text style={styles.headerText} size={17} color={theme['c-primary-dark-100-alpha-300']}>星河音乐</Text>
       </View>
       <View style={styles.right}>
         <ScrollView horizontal={true} showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps={'always'} style={styles.navScroll}>
           <View style={styles.navList}>
             {NAV_MENUS.filter(m => m.id != 'nav_setting').map((menu, i) => (
-              <NavItem key={menu.id} id={menu.id as IdType} icon={menu.icon} onPress={handlePress} isFirst={i === 0} />
+              <NavItem key={menu.id} id={menu.id} icon={menu.icon} onPress={handlePress} isFirst={i === 0} />
             ))}
             <SettingBtn />
           </View>
@@ -101,12 +110,12 @@ const styles = createStyle({
     flexDirection: 'row',
     alignItems: 'center',
     borderBottomWidth: BorderWidths.normal,
-    paddingBottom: 4,
+    paddingBottom: 2,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingLeft: 12,
+    paddingLeft: 14,
     paddingRight: 6,
   },
   headerText: {
@@ -132,17 +141,34 @@ const styles = createStyle({
   navItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 8,
-    paddingBottom: 8,
-    paddingLeft: 14,
-    paddingRight: 14,
-    marginRight: 10,
+    paddingTop: 10,
+    paddingBottom: 10,
+    paddingLeft: 16,
+    paddingRight: 16,
+    marginRight: 8,
+    borderRadius: 10,
+  },
+  navItemFocus: {
+    borderWidth: 0,
+    borderRadius: 10,
   },
   iconContent: {
-    width: 22,
+    width: 24,
     alignItems: 'center',
   },
   text: {
-    paddingLeft: 6,
+    paddingLeft: 7,
+  },
+  indicatorWrap: {
+    position: 'absolute',
+    bottom: 2,
+    left: 16,
+    right: 16,
+    alignItems: 'center',
+  },
+  indicator: {
+    width: 22,
+    height: 3,
+    borderRadius: 2,
   },
 })

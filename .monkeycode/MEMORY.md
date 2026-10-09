@@ -32,7 +32,22 @@ Entries discovered by the Agent during task execution should follow this format:
 ## Entries
 
 [Project Knowledge Summary]
-- Date: 2026-08-10
+- Date: 2026-10-09
+- Context: Discovered by Agent while overhauling TV focus border UX to match KuGou TV/Dangbei style on lx-music-tv
+- Category: Troubleshooting & Debugging
+- Instructions:
+  - Dual-border root cause: MainActivity.applyFocusSelectorToView sets tv_focus_selector foreground on ALL focusable/clickable Views; FocusableTouchableOpacity's JS focusStyle adds another border → double frame at different positions
+  - NativeID prefix `tv_no_focus_highlight_` skips foreground via isNoFocusHighlightView() ancestor-chain tag lookup; `tv_adjustable_` prefix for sliders/progress bars so JS self-draws highlight without native fallback
+  - JS Focusable* components (FocusableTouchableOpacity, FocusablePressable) now use Animated.createAnimatedComponent + Animated.spring for elastic scale (1→1.06, speed=28, bounciness=5); focusStyle transform scale extracted and merged into animation target via stripScale
+  - FocusBorderColor default changed from #FF69B4 pink to '' (follow theme); init/index.ts migrates old pink value once; theme.ts pushes c-primary on theme switch; setting panel has "auto" option first in list
+  - Animated.createAnimatedComponent wrapper loses nativeID/focusable props in type; cast via `const Comp = AnimatedXxx as any` to pass extra TV props
+  - Pressable style prop can be a function (PressableStateCallbackType); must resolve before StyleSheet.compose: `typeof style === 'function' ? style({pressed: false}) : style`
+  - TouchableOpacityProps does NOT include nativeID or focusable — must declare in custom FocusableTouchableOpacityProps interface
+  - npm install in this environment takes ~7min (812 packages, git deps need bob build); peak memory 1.69GB; set memory_percent=55 for background terminal
+  - tsc has 17 pre-existing errors in unrelated files; bundle-android succeeds; ESLint requires @typescript-eslint/eslint-plugin installed separately (not in package.json)
+
+[Project Knowledge Summary]
+- Date: 2026-08-24
 - Context: Discovered by Agent while fixing TV remote D-pad control for sliders/progress bar on lx-music-tv
 - Category: Troubleshooting & Debugging
 - Instructions:

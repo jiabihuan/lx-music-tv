@@ -377,7 +377,7 @@ export default () => {
           }}
           onProgress={(e: any) => { setProgress(p => ({ ...p, time: e?.currentTime ?? p.time })) }}
           onEnd={onEnd}
-          onError={(e: any) => { toast(`播放出错：${e?.error?.localizedDescription || e?.error || ''}`) }}
+          onError={(e: any) => { toast(`播放出错：${e?.error?.localizedDescription ?? e?.error ?? ''}`) }}
         />
       ) : (
         <View style={StyleSheet.absoluteFill}>
@@ -744,15 +744,13 @@ const styles = createStyle({
     backgroundColor: ACCENT_RED,
   },
   tabFocus: {
-    backgroundColor: ACCENT_RED,
-    borderColor: '#FFFFFF',
-    borderWidth: 3,
+    backgroundColor: '#2A6BE0',
+    borderWidth: 0,
     transform: [{ scale: 1.06 }],
   },
   subTabFocus: {
     backgroundColor: '#2A6BE0',
-    borderColor: '#FFFFFF',
-    borderWidth: 3,
+    borderWidth: 0,
     transform: [{ scale: 1.06 }],
   },
   tabText: {},
@@ -788,10 +786,10 @@ const styles = createStyle({
   },
   cardFocus: {
     backgroundColor: 'transparent',
-    borderColor: '#FFFFFF',
-    borderWidth: 3,
-    borderRadius: 10,
-    transform: [{ scale: 1.08 }],
+    borderColor: '#2A6BE0',
+    borderWidth: 2.5,
+    borderRadius: 12,
+    transform: [{ scale: 1.07 }],
   },
   singerAvatar: {
     width: '100%',
@@ -874,8 +872,7 @@ const styles = createStyle({
   },
   rowFocus: {
     backgroundColor: '#2A6BE0',
-    borderColor: '#FFFFFF',
-    borderWidth: 3,
+    borderWidth: 0,
     transform: [{ scale: 1.02 }],
   },
   searchRowText: {
@@ -946,8 +943,9 @@ const styles = createStyle({
   fsCenterFocus: {
     backgroundColor: 'rgba(42,107,224,0.85)',
     borderColor: '#FFFFFF',
-    borderWidth: 4,
-    transform: [{ scale: 1.12 }],
+    borderWidth: 3,
+    borderRadius: 45,
+    transform: [{ scale: 1.1 }],
   },
   fsAnchorFocus: {
     backgroundColor: 'transparent',
@@ -993,8 +991,7 @@ const styles = createStyle({
   },
   ctrlFocus: {
     backgroundColor: '#2A6BE0',
-    borderColor: '#FFFFFF',
-    borderWidth: 3,
+    borderWidth: 0,
     transform: [{ scale: 1.06 }],
   },
   ctrlText: {
