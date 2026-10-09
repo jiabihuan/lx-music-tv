@@ -138,7 +138,7 @@ const Progress = ({ progress, duration, buffered, paddingTop }: {
       </View>
       <PreassBar onDragState={setDraging} setDragProgress={setDragProgress} onSetProgress={onSetProgress} />
       {/* TV 遥控器：进度条可聚焦，左右方向键步进播放进度，聚焦时显示高亮块 */}
-      { isFocused ? <View style={[styles.tvFocusBg, { backgroundColor: theme['c-primary-light-100-alpha-700'], borderColor: '#FF69B4' }]} /> : null }
+      { isFocused ? <View style={[styles.tvFocusBg, { backgroundColor: theme['c-primary-light-100-alpha-700'], borderColor: theme['c-primary'] }]} /> : null }
       <View
         nativeID={nativeID}
         focusable={true}

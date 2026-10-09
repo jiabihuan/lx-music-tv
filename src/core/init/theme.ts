@@ -4,6 +4,7 @@ import { setShouldUseDarkColors, applyTheme } from '@/core/theme'
 import { getTheme } from '@/theme/themes/index'
 import settingState from '@/store/setting/state'
 import StatusBar from '@/components/common/StatusBar'
+import { setFocusBorderColor } from '@/utils/nativeModules/utils'
 // import { Dimensions, PixelRatio } from 'react-native'
 
 
@@ -21,6 +22,10 @@ export default async(setting: LX.AppSetting) => {
 
   global.state_event.on('themeUpdated', (theme) => {
     StatusBar.setBarStyle(theme.isDark ? 'light-content' : 'dark-content')
+    // 焦点框颜色跟随主题：用户未自定义焦点色时，主题切换后同步推送到原生层
+    if (!settingState.setting['theme.focusBorderColor']) {
+      setFocusBorderColor(theme['c-primary'])
+    }
   })
   // onDimensionChange(({ window }) => {
   //   let screenW = window.width

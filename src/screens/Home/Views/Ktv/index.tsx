@@ -8,7 +8,7 @@ import {
   type NativeSyntheticEvent,
   type TextInputSubmitEditingEventData,
 } from 'react-native'
-import Video from 'react-native-video'
+import Video, { type VideoRef } from 'react-native-video'
 import { FocusableTouchableOpacity as TouchableOpacity } from '@/components/tv/FocusableTouchableOpacity'
 import Text from '@/components/common/Text'
 import { IconMaterial } from '@/components/common/Icon'
@@ -21,8 +21,82 @@ import { BorderWidths } from '@/theme'
 import { useBackHandler } from '@/utils/hooks/useBackHandler'
 import { setNavActiveId } from '@/core/common'
 import { setFullscreenKeyCapture } from '@/utils/nativeModules/utils'
+import { adjustVolume } from '@/utils/nativeModules/utils'
 import { mvSingers, mvSongs, mvSearch, mvPlayer } from '@/utils/nativeModules/ktvSpider'
 import { getSingerAvatar, preloadSingerAvatars } from '@/utils/ktvAvatarCache'
+import { getLyricInfo } from '@/core/music'
+import { setLyric, play as playLyric, pause as pauseLyric, useLrcSet, useLrcWords, useLrcPlay } from '@/plugins/lyric'
+import { getPosition } from '@/plugins/player/utils'
+import LrcWord from '@/screens/PlayDetail/components/LrcWord'
+import { type Line } from '@/plugins/lyric'
+
+// ============ LRC歌词叠加层组件 ============
+/**
+ * LRC歌词叠加层：底部固定区域，显示当前播放的歌词。
+ * 卡拉OK风格：当前行放大高亮+逐字渐亮，上下文行缩小灰色。
+ */
+const LrcOverlay = memo(({
+  lines,
+  wordLinesMap,
+  activeLine,
+  theme,
+  showControls,
+}: {
+  lines: Line[]
+  wordLinesMap: Map<number, import('@/plugins/lyric').Word[]>
+  activeLine: number
+  theme: ReturnType<typeof useTheme>
+  showControls: boolean
+}) => {
+  const { width: winW } = useWindowDimensions()
+  const baseFontSize = Math.max(14, winW * 0.025)
+  const activeFontSize = Math.max(22, winW * 0.04)
+
+  // 计算当前行前后各2行的范围
+  const startLine = Math.max(0, activeLine - 2)
+  const endLine = Math.min(lines.length - 1, activeLine + 2)
+
+  if (lines.length === 0 || activeLine < 0) return null
+
+  return (
+    <View style={[styles.lrcOverlay, { bottom: showControls ? 120 : 80 }]}>
+      {Array.from({ length: endLine - startLine + 1 }, (_, i) => startLine + i).map((lineNum) => {
+        const line = lines[lineNum]
+        if (!line) return null
+        const isActive = lineNum === activeLine
+        const words = wordLinesMap.get(lineNum) ?? []
+        return (
+          <View
+            key={lineNum}
+            style={[styles.lrcLine, isActive && styles.lrcLineActive]}
+          >
+            {words.length > 0
+              ? words.map((word, wi) => (
+                  <LrcWord
+                    key={wi}
+                    word={word}
+                    active={isActive}
+                    size={isActive ? activeFontSize : baseFontSize}
+                    color={isActive ? theme['c-primary'] : '#FFFFFF88'}
+                    lineHeight={isActive ? activeFontSize * 1.4 : baseFontSize * 1.4}
+                  />
+                ))
+              : (
+                  <Text
+                    size={isActive ? activeFontSize : baseFontSize}
+                    color={isActive ? theme['c-primary'] : '#FFFFFF88'}
+                    style={{ lineHeight: isActive ? activeFontSize * 1.4 : baseFontSize * 1.4 }}
+                  >
+                    {line.text}
+                  </Text>
+                )
+            }
+          </View>
+        )
+      })}
+    </View>
+  )
+})
 
 // ============ 类型 ============
 interface MvSong {
@@ -30,6 +104,16 @@ interface MvSong {
   vod_name: string
   vod_pic?: string
   vod_remarks?: string
+}
+
+// MV播放时携带的音乐信息（用于获取歌词）
+interface MvMusicInfo {
+  id: string
+  name: string
+  singer: string
+  source: string
+  interval?: string | null
+  meta?: any
 }
 
 // 一级页面 Tab（男歌手/女歌手独立）
@@ -104,9 +188,15 @@ export default () => {
   const [menuVisible, setMenuVisible] = useState(false)
   // 视频分辨率（onLoad 时取 naturalSize，暂停时左上角展示）
   const [videoSize, setVideoSize] = useState<{ w: number, h: number } | null>(null)
+  // 歌词相关
+  const musicInfo = useRef<MvMusicInfo | null>(null)
+  const lrcLines = useLrcSet()
+  const wordLinesMap = useLrcWords()
+  const lrcInfo = useLrcPlay()
+  const activeLine = lrcInfo.line
 
   const searchInputRef = useRef<InputType>(null)
-  const videoRef = useRef<Video | null>(null)
+  const videoRef = useRef<VideoRef | null>(null)
   const loadingRef = useRef(false)
   const [singerGridW, setSingerGridW] = useState(0)
   const [mvGridW, setMvGridW] = useState(0)
@@ -251,12 +341,27 @@ export default () => {
       setPlayer({ url, name: item.vod_name, pic: item.vod_pic })
       setFullScreen(true)
       setShowControls(false)
+      // 加载歌词
+      const singerName = getSingerFromName(item.vod_name)
+      const info: MvMusicInfo = {
+        id: item.vod_id,
+        name: item.vod_name,
+        singer: singerName,
+        source: 'kg',
+      }
+      musicInfo.current = info
+      void getLyricInfo({ musicInfo: info as any }).then((lyricInfo) => {
+        const lyric = lyricInfo.lyric ?? ''
+        const tlyric = lyricInfo.tlyric ?? ''
+        const lxlyric = lyricInfo.lxlyric ?? ''
+        setLyric(lyric, tlyric, '', lxlyric)
+      }).catch(() => {})
     } catch (err) {
       toast(`播放失败：${(err as Error).message ?? err}`)
     } finally {
       loadingRef.current = false
     }
-  }, [])
+  }, [getSingerFromName])
 
   // 点击 MV（二级列表或搜索/歌曲结果）→ 加载该歌手全部 MV 并播放
   const openMv = useCallback(async(song: MvSong) => {
@@ -292,6 +397,7 @@ export default () => {
   //   - 上键     → 上一曲（控制条隐藏时，有上一首才响应）
   //   - 下键     → 下一曲（控制条隐藏时，有下一首才响应）
   //   - 菜单键   → 呼出歌曲选择菜单
+  //   - 音量键   → 调节系统音量
   //   - 控制条显示时关闭拦截，恢复系统焦点导航
   const keyCaptureOn = fullScreen && !menuVisible && !showControls
   useEffect(() => {
@@ -322,6 +428,14 @@ export default () => {
       } else if (code === 22) {
         // DPAD_RIGHT → 快进 10s
         seekBy(SEEK_STEP)
+      } else if (code === 24 || code === 25 || code === 164) {
+        // 音量键：向上调大，向下调小，MUTE静音切换
+        if (code === 24) adjustVolume(1)
+        else if (code === 25) adjustVolume(-1)
+        else {
+          // MUTE键：切换静音
+          adjustVolume(0)
+        }
       }
     })
     return () => { listener.remove() }
@@ -377,7 +491,15 @@ export default () => {
           }}
           onProgress={(e: any) => { setProgress(p => ({ ...p, time: e?.currentTime ?? p.time })) }}
           onEnd={onEnd}
-          onError={(e: any) => { toast(`播放出错：${e?.error?.localizedDescription || e?.error || ''}`) }}
+          onError={(e: any) => { toast(`播放出错：${e?.error?.localizedDescription ?? e?.error ?? ''}`) }}
+          onPlaybackStateChanged={(e: any) => {
+            const isPlaying = e?.isPlaying
+            if (isPlaying !== undefined) {
+              setPaused(!isPlaying)
+              if (isPlaying) playLyric(progress.time)
+              else pauseLyric()
+            }
+          }}
         />
       ) : (
         <View style={StyleSheet.absoluteFill}>
@@ -409,6 +531,17 @@ export default () => {
         >
           <IconMaterial name="play-arrow" size={72} color="#FFFFFF" />
         </TouchableOpacity>
+      )}
+
+      {/* LRC歌词叠加层：卡拉OK风格，底部固定显示 */}
+      {fullScreen && lrcLines.length > 0 && (
+        <LrcOverlay
+          lines={lrcLines}
+          wordLinesMap={wordLinesMap}
+          activeLine={activeLine}
+          theme={theme}
+          showControls={showControls}
+        />
       )}
 
       {/* 暂停时左上角显示视频分辨率 */}
@@ -744,15 +877,13 @@ const styles = createStyle({
     backgroundColor: ACCENT_RED,
   },
   tabFocus: {
-    backgroundColor: ACCENT_RED,
-    borderColor: '#FFFFFF',
-    borderWidth: 3,
+    backgroundColor: '#2A6BE0',
+    borderWidth: 0,
     transform: [{ scale: 1.06 }],
   },
   subTabFocus: {
     backgroundColor: '#2A6BE0',
-    borderColor: '#FFFFFF',
-    borderWidth: 3,
+    borderWidth: 0,
     transform: [{ scale: 1.06 }],
   },
   tabText: {},
@@ -788,10 +919,10 @@ const styles = createStyle({
   },
   cardFocus: {
     backgroundColor: 'transparent',
-    borderColor: '#FFFFFF',
-    borderWidth: 3,
-    borderRadius: 10,
-    transform: [{ scale: 1.08 }],
+    borderColor: '#2A6BE0',
+    borderWidth: 2.5,
+    borderRadius: 12,
+    transform: [{ scale: 1.07 }],
   },
   singerAvatar: {
     width: '100%',
@@ -874,8 +1005,7 @@ const styles = createStyle({
   },
   rowFocus: {
     backgroundColor: '#2A6BE0',
-    borderColor: '#FFFFFF',
-    borderWidth: 3,
+    borderWidth: 0,
     transform: [{ scale: 1.02 }],
   },
   searchRowText: {
@@ -946,8 +1076,9 @@ const styles = createStyle({
   fsCenterFocus: {
     backgroundColor: 'rgba(42,107,224,0.85)',
     borderColor: '#FFFFFF',
-    borderWidth: 4,
-    transform: [{ scale: 1.12 }],
+    borderWidth: 3,
+    borderRadius: 45,
+    transform: [{ scale: 1.1 }],
   },
   fsAnchorFocus: {
     backgroundColor: 'transparent',
@@ -993,8 +1124,7 @@ const styles = createStyle({
   },
   ctrlFocus: {
     backgroundColor: '#2A6BE0',
-    borderColor: '#FFFFFF',
-    borderWidth: 3,
+    borderWidth: 0,
     transform: [{ scale: 1.06 }],
   },
   ctrlText: {
@@ -1056,5 +1186,21 @@ const styles = createStyle({
   },
   menuRowDur: {
     marginRight: 8,
+  },
+  // LRC歌词叠加层样式
+  lrcOverlay: {
+    position: 'absolute',
+    bottom: 120,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  lrcLine: {
+    marginBottom: 4,
+    paddingHorizontal: 16,
+  },
+  lrcLineActive: {
+    marginBottom: 6,
   },
 })

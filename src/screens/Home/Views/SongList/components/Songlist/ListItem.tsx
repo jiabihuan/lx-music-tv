@@ -28,7 +28,7 @@ export default memo(({ item, index, width, showSource, onPress }: {
           <View style={{ ...styles.listItem, width: itemWidth }}>
             <View style={{ ...styles.listItemImg, backgroundColor: theme['c-content-background'] }}>
               <TouchableOpacity activeOpacity={0.5} onPress={handlePress} focusStyle={styles.focusStyle}>
-                <Image url={item.img} nativeID={`${NAV_SHEAR_NATIVE_IDS.songlistDetail_pic}_from_${item.id}`} style={{ width: itemWidth, height: itemWidth, borderRadius: 4 }} />
+                <Image url={item.img} nativeID={`${NAV_SHEAR_NATIVE_IDS.songlistDetail_pic}_from_${item.id}`} style={{ width: itemWidth, height: itemWidth, borderRadius: 12 }} />
                 { showSource ? <Text style={styles.sourceLabel} size={9} color="#fff" >{item.source}</Text> : null }
               </TouchableOpacity>
             </View>
@@ -46,15 +46,13 @@ const styles = createStyle({
   },
   focusStyle: {
     backgroundColor: 'transparent',
-    borderColor: '#FFFFFF',
-    borderWidth: 3,
-    borderRadius: 6,
-    transform: [{ scale: 1.08 }],
+    borderRadius: 14,
+    transform: [{ scale: 1.07 }],
   },
   listItemImg: {
     // backgroundColor: '#eee',
-    borderRadius: 4,
-    marginBottom: 5,
+    borderRadius: 12,
+    marginBottom: 6,
     overflow: 'hidden',
     ...Platform.select({
       ios: {
@@ -72,17 +70,17 @@ const styles = createStyle({
     }),
   },
   sourceLabel: {
-    paddingLeft: 4,
-    paddingBottom: 2,
-    paddingRight: 4,
+    paddingLeft: 5,
+    paddingBottom: 3,
+    paddingRight: 5,
     position: 'absolute',
     top: 0,
     right: 0,
-    borderBottomLeftRadius: 3,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderBottomLeftRadius: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
   },
   listItemTitle: {
-    fontSize: 12,
+    fontSize: 13,
     // overflow: 'hidden',
     marginBottom: 5,
   },

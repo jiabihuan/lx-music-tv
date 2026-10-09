@@ -1,18 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- TV 焦点高亮（原生 fallback，用于未自绘焦点样式的可聚焦 View）
+     酷狗TV风格：大圆角 + 细描边 + 极淡填充；描边颜色运行时可由 JS 侧 setFocusBorderColor 覆盖 -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:state_focused="true">
         <shape android:shape="rectangle">
-            <solid android:color="#26FFFFFF" />
-            <corners android:radius="6dp" />
+            <solid android:color="#0DFFFFFF" />
+            <corners android:radius="10dp" />
             <stroke
-                android:width="3dp"
-                android:color="#FFFF69B4" />
+                android:width="2dp"
+                android:color="#FF2CA3F3" />
         </shape>
     </item>
     <item android:state_pressed="true">
         <shape android:shape="rectangle">
-            <solid android:color="#44FFFFFF" />
-            <corners android:radius="6dp" />
+            <solid android:color="#24FFFFFF" />
+            <corners android:radius="10dp" />
         </shape>
     </item>
     <item android:drawable="@android:color/transparent" />

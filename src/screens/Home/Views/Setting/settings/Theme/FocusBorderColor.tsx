@@ -11,6 +11,7 @@ import { createStyle } from '@/utils/tools'
 import { setFocusBorderColor } from '@/utils/nativeModules/utils'
 
 export const FOCUS_BORDER_COLOR_LIST = [
+  'auto',
   'pink',
   'white',
   'black',
@@ -24,7 +25,7 @@ export const FOCUS_BORDER_COLOR_LIST = [
 
 export type FocusBorderColor = typeof FOCUS_BORDER_COLOR_LIST[number]
 
-const FOCUS_BORDER_COLORS: Record<FocusBorderColor, string> = {
+const FOCUS_BORDER_COLORS: Record<Exclude<FocusBorderColor, 'auto'>, string> = {
   pink: '#FF69B4',
   white: '#FFFFFF',
   black: '#000000',
@@ -38,6 +39,7 @@ const FOCUS_BORDER_COLORS: Record<FocusBorderColor, string> = {
 
 const useActive = (id: FocusBorderColor) => {
   const x = useSettingValue('theme.focusBorderColor')
+  if (id === 'auto') return x === ''
   return x == FOCUS_BORDER_COLORS[id]
 }
 
@@ -58,10 +60,11 @@ const Item = ({ id, change }: {
           borderRadius: 9,
           borderWidth: 1.5,
           borderColor: isActive ? theme['c-primary'] : theme['c-border-background'],
-          backgroundColor: FOCUS_BORDER_COLORS[id],
+          backgroundColor: id == 'auto' ? theme['c-primary'] : FOCUS_BORDER_COLORS[id],
         }}
       />
-      <CheckBox marginBottom={3} check={isActive} label={t(`setting_theme_focus_border_color_${id}`)} onChange={() => { change(id) }} need />
+      {/* eslint-disable-next-line @typescript-eslint/no-unsafe-argument */}
+      <CheckBox marginBottom={3} check={isActive} label={t(`setting_theme_focus_border_color_${id}` as any)} onChange={() => { change(id) }} need />
     </View>
   )
 }
@@ -69,12 +72,14 @@ const Item = ({ id, change }: {
 export default memo(() => {
   const t = useI18n()
   const color = useSettingValue('theme.focusBorderColor')
+  const theme = useTheme()
   useEffect(() => {
     if (color) setFocusBorderColor(color)
   }, [color])
   const setColor = (id: FocusBorderColor) => {
-    updateSetting({ 'theme.focusBorderColor': FOCUS_BORDER_COLORS[id] })
-    setFocusBorderColor(FOCUS_BORDER_COLORS[id])
+    const c = id == 'auto' ? '' : FOCUS_BORDER_COLORS[id]
+    updateSetting({ 'theme.focusBorderColor': c })
+    setFocusBorderColor(c || theme['c-primary'])
   }
 
   return (

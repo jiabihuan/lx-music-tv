@@ -16,6 +16,7 @@ import { checkUpdate } from '@/core/version'
 import { bootLog } from '@/utils/bootLog'
 import { cheatTip } from '@/utils/tools'
 import { setFocusBorderColor } from '@/utils/nativeModules/utils'
+import themeState from '@/store/theme/state'
 
 let isFirstPush = true
 const handlePushedHomeScreen = async() => {
@@ -46,9 +47,17 @@ export default async() => {
   await initI18n(setting)
   bootLog('I18n inited.')
 
-  // 应用用户自定义焦点框颜色
+  // 应用用户自定义焦点框颜色：空值表示跟随主题色
+  // 迁移：旧版本默认值 '#FF69B4'（粉红）已改为跟随主题，此处一次性重置
   const focusBorderColor = settingState.setting['theme.focusBorderColor']
-  if (focusBorderColor) setFocusBorderColor(focusBorderColor)
+  if (focusBorderColor == '#FF69B4') {
+    updateSetting({ 'theme.focusBorderColor': '' })
+    setFocusBorderColor(themeState.theme['c-primary'])
+  } else if (focusBorderColor) {
+    setFocusBorderColor(focusBorderColor)
+  } else {
+    setFocusBorderColor(themeState.theme['c-primary'])
+  }
   bootLog('Focus border color applied.')
 
   await initUserApi(setting)

@@ -49,7 +49,7 @@ export default memo(({ value, minimumValue, maximumValue, onSlidingStart, onSlid
 
   return (
     <View style={styles.focusWrap}>
-      { isFocused ? <View style={[styles.tvFocusBg, { backgroundColor: theme['c-primary-light-100-alpha-700'], borderColor: '#FF69B4' }]} /> : null }
+      { isFocused ? <View style={[styles.tvFocusBg, { backgroundColor: theme['c-primary-light-100-alpha-700'], borderColor: theme['c-primary'] }]} /> : null }
       <View nativeID={nativeID} focusable={true} onFocus={() => { setIsFocused(true) }} onBlur={() => { setIsFocused(false) }} style={styles.focusArea}>
         <Slider
           value={value}

@@ -14,6 +14,7 @@ import android.os.Build;
 import android.util.Log;
 import android.view.Window;
 import android.view.WindowManager;
+import android.media.AudioManager;
 
 import androidx.core.app.LocaleManagerCompat;
 import androidx.core.content.FileProvider;
@@ -196,7 +197,7 @@ public class UtilsModule extends ReactContextBaseJavaModule {
 
    /**
     * 动态设置 TV 遥控器焦点框边框颜色
-    * @param colorStr 十六进制颜色字符串，如 "#FF69B4"，空字符串使用默认粉红
+    * @param colorStr 十六进制颜色字符串，如 "#2CA3F3"，空字符串使用默认主题蓝
     */
    @ReactMethod
    public void setFocusBorderColor(String colorStr) {
@@ -214,6 +215,25 @@ public class UtilsModule extends ReactContextBaseJavaModule {
        Intent intent = new Intent(currentActivity, cn.toside.music.mobile.ktv.KtvActivity.class);
        currentActivity.startActivity(intent);
      }
+   }
+
+   /**
+    * 调节音量（KTV 全屏播放时使用）
+    * @param direction 1 增大音量，-1 减小音量
+    */
+   @ReactMethod
+   public void adjustVolume(int direction) {
+     Activity currentActivity = getCurrentActivity();
+     if (currentActivity == null) return;
+     AudioManager audioManager = (AudioManager) currentActivity.getSystemService(Context.AUDIO_SERVICE);
+     if (audioManager == null) return;
+     int streamType = AudioManager.STREAM_MUSIC;
+     int maxVolume = audioManager.getStreamMaxVolume(streamType);
+     int currentVolume = audioManager.getStreamVolume(streamType);
+     int newVolume = currentVolume + direction;
+     if (newVolume < 0) newVolume = 0;
+     if (newVolume > maxVolume) newVolume = maxVolume;
+     audioManager.setStreamVolume(streamType, newVolume, 0);
    }
 
   @ReactMethod

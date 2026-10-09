@@ -67,7 +67,8 @@ const defaultSetting: LX.AppSetting = {
   'theme.customBgImage': '',
   'theme.wallpaperMask': 0,
   'theme.fontColor': '',
-  'theme.focusBorderColor': '#FF69B4',
+  // 焦点框颜色：空字符串表示跟随主题色（原生侧由 JS 在主题更新时推送）
+  'theme.focusBorderColor': '',
 }
 
 export default defaultSetting

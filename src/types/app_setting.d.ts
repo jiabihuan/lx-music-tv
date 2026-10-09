@@ -122,7 +122,7 @@ declare global {
       'theme.fontColor': string
 
       /**
-       * 用户选择的遥控器焦点框颜色（十六进制颜色值，如 #FF69B4，空字符串表示使用默认）
+       * 用户选择的遥控器焦点框颜色（十六进制颜色值，如 #2CA3F3，空字符串表示跟随主题色）
        */
       'theme.focusBorderColor': string
 

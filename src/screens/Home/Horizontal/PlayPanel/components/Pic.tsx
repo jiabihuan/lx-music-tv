@@ -65,6 +65,7 @@ export default memo(({ panelWidth }: { panelWidth: number }) => {
     <View style={styles.container}>
       <TouchableOpacity
         style={{ ...styles.imageWrap, borderColor: theme['c-primary-light-200-alpha-400'] }}
+        focusStyle={{ borderRadius: 999, backgroundColor: 'transparent', borderColor: theme['c-primary'] }}
         onLongPress={handleLongPress}
         onPress={handlePress}
         activeOpacity={0.7}
